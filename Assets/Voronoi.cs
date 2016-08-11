@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Graph2D;
 
 namespace Assets
 {
@@ -148,7 +149,7 @@ namespace Assets
                     // If already built, get dual graph
                     if (triangulation.Built)
                     {
-                        graph = triangulation.Graph.DualGraph();
+                        graph = triangulation.Graph.CircumcircleDualGraph();
                     }
 
                     // Build delaunay triangulation (remove super triangle)

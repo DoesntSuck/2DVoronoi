@@ -3,6 +3,10 @@ using System.Runtime.CompilerServices;
 
 namespace UnityEngine
 {
+    /// <summary>
+    /// Vector2d struct with double precision x, and y components
+    /// Code used courtesy of Kristian Holdich: https://github.com/sldsmkd/vector3d
+    /// </summary>
     public struct Vector2d
     {
         public const double kEpsilon = 1E-05d;
@@ -101,6 +105,11 @@ namespace UnityEngine
         {
             this.x = x;
             this.y = y;
+        }
+
+        public static implicit operator Vector2d(Vector2 v)
+        {
+            return new Vector2d(v.x, v.y);
         }
 
         public static implicit operator Vector2d(Vector3d v)

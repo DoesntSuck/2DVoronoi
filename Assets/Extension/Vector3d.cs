@@ -3,6 +3,10 @@ using System.Runtime.CompilerServices;
 
 namespace UnityEngine
 {
+    /// <summary>
+    /// Vector3 struct with double precision x, y, and z components
+    /// Code used courtesy of Kristian Holdich: https://github.com/sldsmkd/vector3d
+    /// </summary>
     public struct Vector3d
     {
         public const float kEpsilon = 1E-05f;

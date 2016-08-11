@@ -3,7 +3,11 @@ using System.Runtime.CompilerServices;
 
 namespace UnityEngine
 {
-    public struct Mathd
+    /// <summary>
+    /// Static class for extending unity math library to support vectors with double precision x, y, and z components
+    /// Code used courtesy of Kristian Holdich: https://github.com/sldsmkd/vector3d
+    /// </summary>
+    public static class Mathd
     {
         public const double PI = 3.141593d;
         public const double Infinity = double.PositiveInfinity;

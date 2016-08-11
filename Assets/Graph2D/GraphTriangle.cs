@@ -1,16 +1,27 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 
-namespace Assets
+namespace Graph2D
 {
+    /// <summary>
+    /// Triangle object for containing three nodes that are joined by edges in a graph
+    /// </summary>
     public class GraphTriangle
     {
+        /// <summary>
+        /// The three consituent nods of this triangle
+        /// </summary>
         public GraphNode[] Nodes { get; private set; }
+
+        /// <summary>
+        /// The three constituent edges of this triangle
+        /// </summary>
         public GraphEdge[] Edges { get; private set; }
 
+        /// <summary>
+        /// The circle that touches all three points of this triangle
+        /// </summary>
         public Circle Circumcircle
         {
             get
@@ -24,6 +35,9 @@ namespace Assets
         }
         private Circle circumcircle;
 
+        /// <summary>
+        /// A triangle containing the three given nodes. Throws an error if the nodes are not connected by edges
+        /// </summary>
         public GraphTriangle(GraphNode a, GraphNode b, GraphNode c)
         {
             Nodes = new GraphNode[] { a, b, c };
@@ -35,48 +49,31 @@ namespace Assets
             {
                 for (int j = i + 1; j < Nodes.Length; j++)
                 {
-                    foreach (GraphEdge edge in Nodes[i].Edges)
-                    {
-                        if (edge.Contains(Nodes[j]))
-                            Edges[edgeIndex++] = edge;
-                    }
+                    // Add edge, connecting node i and j, to array
+                    foreach (GraphEdge edge in Nodes[i].Edges.Where(e => e.Contains(Nodes[j])))
+                        Edges[edgeIndex++] = edge;  // Index is incremented AFTER edge is added
                 }
             }
-        }
 
-        public GraphTriangle(GraphEdge edge1, GraphEdge edge2, GraphEdge edge3)
-        {
-            Edges = new GraphEdge[] { edge1, edge2, edge3 };
-            Nodes = new GraphNode[Edges.Length];
-            int i = 0;
-
-            // Add all unique nodes to node list
+            // Check that the given nodes connect to form a triangle
             foreach (GraphEdge edge in Edges)
             {
-                foreach (GraphNode node in edge.Nodes)
-                {
-                    if (!Nodes.Contains(node))
-                        Nodes[i++] = node;
-                }
+                if (edge == null)
+                    throw new ArgumentException("Nodes are not connected and do not constitute a triangle");
             }
         }
 
+        /// <summary>
+        /// Checks if this triangle contains the given node
+        /// </summary>
         public bool Contains(GraphNode node)
         {
             return Nodes.Contains(node);
         }
 
-        public bool Contains(params GraphNode[] nodes)
-        {
-            foreach (GraphNode node in nodes)
-            {
-                if (!Contains(node))
-                    return false;
-            }
-
-            return true;
-        }
-
+        /// <summary>
+        /// Check if this triangle contains the given edge
+        /// </summary>
         public bool Contains(GraphEdge edge)
         {
             foreach (GraphEdge myEdge in Edges)
@@ -86,17 +83,6 @@ namespace Assets
             }
 
             return false;
-        }
-
-        public bool Contains(params GraphEdge[] edges)
-        {
-            foreach (GraphEdge edge in edges)
-            {
-                if (!Contains(edge))
-                    return false;
-            }
-
-            return true;
         }
     }
 }

@@ -2,8 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
+using Graph2D;
 
 namespace Assets
 {
@@ -88,7 +88,7 @@ namespace Assets
             // TODO: only add edge one time!
             GraphNode newNode = Graph.AddNode(insertionVector);
             foreach (GraphEdge outsideEdge in outsideEdges)
-                Graph.AddTriangle(outsideEdge, newNode);
+                Graph.CreateTriangle(outsideEdge, newNode);
 
 
             //
@@ -150,7 +150,7 @@ namespace Assets
             NewTriangles = new List<GraphTriangle>();
             foreach (GraphEdge outsideEdge in outsideEdges)
             {
-                GraphTriangle newTriangle = Graph.AddTriangle(outsideEdge, newNode);
+                GraphTriangle newTriangle = Graph.CreateTriangle(outsideEdge, newNode);
                 NewTriangles.Add(newTriangle);
             }
 

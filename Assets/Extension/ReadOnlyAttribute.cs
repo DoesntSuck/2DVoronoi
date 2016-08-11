@@ -1,9 +1,12 @@
 ﻿using System;
-using UnityEngine;
 using UnityEditor;
 
-namespace Assets
+namespace UnityEngine
 {
+    /// <summary>
+    /// Uneditable inspector property. Code courtesy of Lev-Lukomskyi: 
+    /// http://answers.unity3d.com/questions/489942/how-to-make-a-readonly-property-in-inspector.html
+    /// </summary>
     public class ReadOnlyAttribute : PropertyAttribute
     {
 
