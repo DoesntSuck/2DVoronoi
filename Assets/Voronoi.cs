@@ -1,11 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Linq;
 using Graph2D;
 
 namespace Assets
 {
     public class Voronoi : MonoBehaviour
     {
+        [Range(0, 1)]
+        public float Spacing = 0.1f;
+
         public int NodeCount = 10;
         [ReadOnly]
         public int EdgeCount;
@@ -26,10 +30,22 @@ namespace Assets
             // Randomly generate NodeCount number of vectors IF none have been input to vectors array
             if (vectors.Length == 0)
             {
-                // Random vector with magnitude of one
+                // Random vector within unit circle
                 vectors = new Vector2[NodeCount];
                 for (int i = 0; i < vectors.Length; i++)
-                    vectors[i] = Random.insideUnitCircle;
+                {
+                    // Generate new vector to be inserted
+                    Vector2 newVector = Random.insideUnitCircle;
+
+                    // Get array sub array of vectors that have already been generated
+                    Vector2[] others = vectors.SubArray(0, i);
+
+                    // Generate a replacement vector until the new vector is not within range of any other vector
+                    while (newVector.AnyWithinDistance(others, Spacing))
+                        newVector = Random.insideUnitCircle;
+
+                    vectors[i] = newVector;
+                }
             }
 
             // Triangulation which will be passed vectors
@@ -39,6 +55,18 @@ namespace Assets
             // Keep debug counts up to date
             EdgeCount = triangulation.Graph.Edges.Count;
             TriangleCount = triangulation.Graph.Triangles.Count;
+        }
+
+        private bool AnyWithinDistance(Vector3[] vectors, Vector3 other, float distance)
+        {
+            // Check against every vector in given array
+            for (int i = 0; i < vectors.Length; i++)
+            {
+                if (Vector2.Distance(vectors[i], other) <= distance)
+                    return true;
+            }
+
+            return false;
         }
 
         public void OnDrawGizmos()

@@ -159,18 +159,8 @@ namespace Assets
             NewTriangles = null;
         }
 
-        private List<GraphEdge> Edges(List<GraphTriangle> triangles)
-        {
-            HashSet<GraphEdge> edges = new HashSet<GraphEdge>();
-            foreach (GraphTriangle triangle in triangles)
-                edges.Union(triangle.Edges);
-
-            return edges.ToList();
-        }
-
         private void InsideOutsideEdges(out List<GraphEdge> insideEdges, out List<GraphEdge> outsideEdges, List<GraphTriangle> triangles)
         {
-            List<GraphEdge> edges = Edges(triangles);
             insideEdges = new List<GraphEdge>();
             outsideEdges = new List<GraphEdge>();
 

@@ -141,7 +141,10 @@ namespace Graph2D
             foreach (GraphNode node in edge.Nodes)
                 node.RemoveEdge(edge);
 
+            // TODO: REMOVE TRIANGLES THAT CONTAIN EDGE FROM GRAPH
+
             GraphTriangle[] triangles = edge.Triangles.ToArray();
+            
             // Iterate through all triangles containing edge
             foreach (GraphTriangle triangle in triangles)
                 edge.RemoveTriangle(triangle);

@@ -1,5 +1,7 @@
 ﻿using System;
 using Graph2D;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace UnityEngine
 {
@@ -8,6 +10,11 @@ namespace UnityEngine
     /// </summary>
     public static class MathExtension
     {
+        public static bool AnyWithinDistance(this Vector2 vector, IEnumerable<Vector2> others, float distance)
+        {
+            return others.Where(v => Vector2.Distance(vector, v) <= distance).Any();
+        }
+        
         /// <summary>
         /// Calculates the circumcircle of the triangle defined by the given position vectors
         /// </summary>
