@@ -32,6 +32,15 @@ namespace Assets
         [Tooltip("Should the delaunay triangulation draw the circumcircle of each triangle?")]
         public bool DrawCircumcircle = true;
 
+        public Color NodeColor = Color.white;
+        public Color CircumcircleColor = Color.red;
+        public Color EdgeColor = Color.yellow;
+        public Color TriangleColor = Color.white;
+        public Color InsideEdgesColor = Color.black;
+        public Color OutsideEdgesColor = Color.green;
+        public Color NewTrianglesColor = Color.cyan;
+        public Color VoronoiColor = Color.red;
+
         Graph delaunay;
         Graph voronoi;
         GraphNode[] superTriangleNodes;
@@ -82,33 +91,33 @@ namespace Assets
             {
                 // Draw circumcircles
                 if (DrawCircumcircle)
-                    DrawCircumcircles(delaunay.Triangles, Color.red);
+                    DrawCircumcircles(delaunay.Triangles, CircumcircleColor);
 
                 // Draw edges
-                DrawEdges(delaunay.Edges, Color.yellow);
+                DrawEdges(delaunay.Edges, EdgeColor);
 
                 // Draw triangles
-                DrawTriangles(delaunay.Triangles, Color.white);
+                DrawTriangles(delaunay.Triangles, TriangleColor);
 
                 // Draw outside edges
                 if (outsideEdges != null)
-                    DrawEdges(outsideEdges, Color.green);
+                    DrawEdges(outsideEdges, OutsideEdgesColor);
                 
                 // Draw inside edges
                 if (insideEdges != null)
-                    DrawEdges(insideEdges, Color.black);
+                    DrawEdges(insideEdges, InsideEdgesColor);
 
                 // Draw newly inserted triangles
                 if (newTriangles != null)
-                    DrawTriangles(newTriangles, Color.cyan);
+                    DrawTriangles(newTriangles, NewTrianglesColor);
 
                 // Draw nodes
-                DrawNodes(delaunay.Nodes, Color.white, 0.025f);
+                DrawNodes(delaunay.Nodes, NodeColor, 0.025f);
             }
 
             // Draw voronoi graph
             if (voronoi != null)
-                DrawEdges(voronoi.Edges, Color.red);
+                DrawEdges(voronoi.Edges, VoronoiColor);
         }
 
         void Update()
