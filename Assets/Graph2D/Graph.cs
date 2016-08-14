@@ -72,7 +72,7 @@ namespace Graph2D
                 node.AddTriangle(triangle);
 
             // Add triangle ref to each of the triangle's edges
-            foreach (GraphEdge edge in Edges)
+            foreach (GraphEdge edge in triangle.Edges)
                 edge.AddTriangle(triangle);
 
             return triangle;
@@ -96,7 +96,7 @@ namespace Graph2D
         }
 
         /// <summary>
-        /// Removes the given node from this graph. Edges and triangles connected to this node are also removed
+        /// Removes reference to the given node from this graph. Edges and triangles connected to this node are also removed
         /// </summary>
         public void Remove(GraphNode node)
         {
@@ -105,32 +105,15 @@ namespace Graph2D
 
             // Find and remove all edges attached to the node being removed
             foreach (GraphEdge edge in node.Edges)
-            {
-                Edges.Remove(edge);
-
-                // Remove ref to edge from its constituent nodes
-                foreach (GraphNode edgeNode in edge.Nodes.Where(n => n != node))
-                    edgeNode.RemoveEdge(edge);
-            }
+                Remove(edge);
 
             // Find and remove all triangles attached to the node being removed
             foreach (GraphTriangle triangle in node.Triangles)
-            {
-                // Remove triangle from triangle list
-                Triangles.Remove(triangle);
-
-                // Remove ref to triangle from its constituent nodes
-                foreach (GraphNode triangleNode in triangle.Nodes.Where(n => n != node))
-                    triangleNode.RemoveTriangle(triangle);
-
-                // Remove ref to triangle from its constituent edges
-                foreach (GraphEdge edge in triangle.Edges)
-                    edge.RemoveTriangle(triangle);
-            }
+                Remove(triangle);
         }
 
         /// <summary>
-        /// Removes the given edge from this graph. Triangles connected to the edge are also removed
+        /// Removes the reference to the given edge from this graph. Triangles connected to the edge are also removed; but, constituent nodes remain.
         /// </summary>
         public void Remove(GraphEdge edge)
         {
@@ -141,17 +124,16 @@ namespace Graph2D
             foreach (GraphNode node in edge.Nodes)
                 node.RemoveEdge(edge);
 
-            // TODO: REMOVE TRIANGLES THAT CONTAIN EDGE FROM GRAPH
+            // Convert to array so original collection can be modified while looping
+            GraphTriangle[] edgeTriangles = edge.Triangles.ToArray();
 
-            GraphTriangle[] triangles = edge.Triangles.ToArray();
-            
             // Iterate through all triangles containing edge
-            foreach (GraphTriangle triangle in triangles)
-                edge.RemoveTriangle(triangle);
+            foreach (GraphTriangle triangle in edgeTriangles)
+                Remove(triangle);
         }
 
         /// <summary>
-        /// Removes the given triangle from this graph
+        /// Removes reference to the given triangle from this graph. Constituent nodes and edges are left in the graph.
         /// </summary>
         public void Remove(GraphTriangle triangle)
         {

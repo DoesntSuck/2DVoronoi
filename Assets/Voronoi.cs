@@ -57,18 +57,6 @@ namespace Assets
             TriangleCount = triangulation.Graph.Triangles.Count;
         }
 
-        private bool AnyWithinDistance(Vector3[] vectors, Vector3 other, float distance)
-        {
-            // Check against every vector in given array
-            for (int i = 0; i < vectors.Length; i++)
-            {
-                if (Vector2.Distance(vectors[i], other) <= distance)
-                    return true;
-            }
-
-            return false;
-        }
-
         public void OnDrawGizmos()
         {
             if (triangulation != null)

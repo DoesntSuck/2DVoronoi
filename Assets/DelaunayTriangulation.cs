@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using Graph2D;
 
@@ -9,175 +8,55 @@ namespace Assets
 {
     public class DelaunayTriangulation
     {
-        public static Vector2 SuperTriangleExtents = new Vector2(2.5f, 2.5f);
-
+        /// <summary>
+        /// The Graph data structure containing nodes, edges, and triangles
+        /// </summary>
         public Graph Graph { get; private set; }
-        public List<GraphEdge> InsideEdges { get; private set; }
-        public List<GraphEdge> OutsideEdges { get; private set; }
-        public List<GraphTriangle> NewTriangles { get; private set; }
-        public bool Built { get; private set; }
-
         private GraphNode[] superTriangleNodes;
 
-        public DelaunayTriangulation()
+        private DelaunayTriangulation(Vector2 origin, float radius)
         {
             Graph = new Graph();
-            
-            // Add super triangle: triangle large enough to encompass all insertion vectors
-            superTriangleNodes = new GraphNode[]
-            {
-                Graph.AddNode(new Vector2(0, SuperTriangleExtents.y)),
-                Graph.AddNode(new Vector2(-SuperTriangleExtents.x, -SuperTriangleExtents.y)),
-                Graph.AddNode(new Vector2(SuperTriangleExtents.x, -SuperTriangleExtents.y)),
-            };
 
-            // Add edges between node pairs
-            for (int i = 0; i < superTriangleNodes.Length - 1; i++)
-            {
-                for (int j = i + 1; j < superTriangleNodes.Length; j++)
-                {
-                    Graph.AddEdge(superTriangleNodes[i], superTriangleNodes[j]);
-                }
-            }
-
-            Graph.AddTriangle(superTriangleNodes[0], superTriangleNodes[1], superTriangleNodes[2]);
+            superTriangleNodes = GraphUtility.InsertSuperTriangle(Graph, origin, radius);
         }
 
-        public DelaunayTriangulation(Graph graph)
+        public DelaunayTriangulation Insert(Vector2 vector)
         {
-            Graph = graph;
-        }
+            // Add new node to graph
+            GraphNode newNode = Graph.AddNode(vector);
 
-        public void Build()
-        {
-            //foreach (GraphNode superTriangleNode in superTriangleNodes)
-            //    Graph.Remove(superTriangleNode);
+            // Find guilty triangles
+            List<GraphTriangle> guiltyTriangles = GraphUtility.WithinCircumcircles(Graph.Triangles, vector).ToList();
 
-            Built = true;
-        }
+            // Seperate triangles into inside and outside constituent edges
+            HashSet<GraphEdge> insideEdges;
+            HashSet<GraphEdge> outsideEdges;
+            GraphUtility.InsideOutsideEdges(out insideEdges, out outsideEdges, guiltyTriangles);
 
-        public void Insert(Vector2 insertionVector)
-        {
-            //
-            // Create list of triangles that have had their Delaunayness violated
-            //
+            // Remove guilty triangles from graph
+            foreach (GraphTriangle triangle in guiltyTriangles)
+                Graph.Remove(triangle);
 
-            List<GraphTriangle> guiltyTriangles = new List<GraphTriangle>();
-            foreach (GraphTriangle triangle in Graph.Triangles)
-            {
-                if (triangle.Circumcircle.Contains(insertionVector))
-                    guiltyTriangles.Add(triangle);
-            }
-
-            // Get list of inside and outside edges
-            List<GraphEdge> insideEdges;
-            List<GraphEdge> outsideEdges;
-            InsideOutsideEdges(out insideEdges, out outsideEdges, guiltyTriangles);
-
-            //
-            // Remove inside edges leaving a hole in the triangulation
-            //
-
+            // Remove inside edges from graph
             foreach (GraphEdge insideEdge in insideEdges)
                 Graph.Remove(insideEdge);
 
-            //
-            // Triangulate the hole
-            //
-
-            // TODO: only add edge one time!
-            GraphNode newNode = Graph.AddNode(insertionVector);
+            // Triangulate hole left by removed edges
             foreach (GraphEdge outsideEdge in outsideEdges)
                 Graph.CreateTriangle(outsideEdge, newNode);
 
-
-            //
-            // Remove guilty triangle refs from graph
-            //
-
-            foreach (GraphTriangle guiltyTriangle in guiltyTriangles)
-                Graph.Remove(guiltyTriangle);
+            // Builder pattern: return self
+            return this;
         }
 
-
-        public IEnumerator GetStepEnumerator(Vector2 insertionVector)
+        public DelaunayTriangulation InsertRange(IEnumerable<Vector2> vectors)
         {
-            // Insert new node
-            GraphNode newNode = Graph.AddNode(insertionVector);
+            // Insert each vector
+            foreach (Vector2 vector in vectors)
+                Insert(vector);
 
-            //
-            // Create list of triangles that have had their Delaunayness violated
-            //
-
-            List<GraphTriangle> guiltyTriangles = new List<GraphTriangle>();
-            foreach (GraphTriangle triangle in Graph.Triangles)
-            {
-                if (triangle.Circumcircle.Contains(insertionVector))
-                    guiltyTriangles.Add(triangle);
-            }
-
-            // Get list of inside and outside edges
-            List<GraphEdge> insideEdges;
-            List<GraphEdge> outsideEdges;
-            InsideOutsideEdges(out insideEdges, out outsideEdges, guiltyTriangles);
-
-            // Save to property so can view outside class
-            InsideEdges = insideEdges;
-            OutsideEdges = outsideEdges;
-            yield return null;
-
-            //
-            // Remove inside edges leaving a hole in the triangulation
-            //
-
-            foreach (GraphEdge insideEdge in insideEdges)
-                Graph.Remove(insideEdge);
-
-            //
-            // Remove guilty triangle refs from graph
-            //
-
-            foreach (GraphTriangle guiltyTriangle in guiltyTriangles)
-                Graph.Remove(guiltyTriangle);
-
-            InsideEdges = null;
-            yield return null;
-
-            //
-            // Triangulate the hole
-            //
-
-            NewTriangles = new List<GraphTriangle>();
-            foreach (GraphEdge outsideEdge in outsideEdges)
-            {
-                GraphTriangle newTriangle = Graph.CreateTriangle(outsideEdge, newNode);
-                NewTriangles.Add(newTriangle);
-            }
-
-            OutsideEdges = null;
-            yield return null;
-            NewTriangles = null;
-        }
-
-        private void InsideOutsideEdges(out List<GraphEdge> insideEdges, out List<GraphEdge> outsideEdges, List<GraphTriangle> triangles)
-        {
-            insideEdges = new List<GraphEdge>();
-            outsideEdges = new List<GraphEdge>();
-
-            foreach (GraphTriangle triangle in triangles)
-            {
-                foreach (GraphEdge edge in triangle.Edges)
-                {
-                    if (outsideEdges.Contains(edge) || insideEdges.Contains(edge))
-                    {
-                        outsideEdges.Remove(edge);
-                        insideEdges.Add(edge);
-                    }
-
-                    else
-                        outsideEdges.Add(edge);
-                }
-            }
+            return this;
         }
     }
 }
