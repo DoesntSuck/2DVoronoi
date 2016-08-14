@@ -87,6 +87,21 @@ namespace Graph2D
         }
 
         /// <summary>
+        /// Gets the opposing node to the given node
+        /// </summary>
+        public GraphNode GetOther(GraphNode node)
+        {
+            if (node.Equals(Nodes[0]))
+                return Nodes[1];
+
+            else if (node.Equals(Nodes[1]))
+                return Nodes[0];
+
+            // Node is not contained in this edge, throw an exception
+            else throw new ArgumentException("Node is not part of this edge");
+        }
+
+        /// <summary>
         /// Checks if this edge's nodes and the given edge's nodes contain the same vector data
         /// </summary>
         public bool Equals(GraphEdge other)
