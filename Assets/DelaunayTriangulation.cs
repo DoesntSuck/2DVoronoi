@@ -78,18 +78,26 @@ namespace Assets
         /// Creates and returns the voronoi dual graph of this delaunay triangulation. A node is created for each triangle in this graph, the 
         /// node is position at its associated triangle's circumcentre. Adjacent triangles have their dual nodes connected by an edge.
         /// </summary>
-        public Graph CircumcircleDualGraph()
+        public VoronoiGraph CircumcircleDualGraph()
         {
             // Dict to associate triangles with nodes in dual graph
             Dictionary<GraphTriangle, GraphNode> triNodeDict = new Dictionary<GraphTriangle, GraphNode>();
-            Graph dualGraph = new Graph();
-
-            // Create a node for each triangle in THIS graph
+            VoronoiGraph dualGraph = new VoronoiGraph();
+            
+            //
+            // Add cell border nodes
+            //
+            
+            // Create a node for each triangle circumcircle in THIS graph <- constitutes a cell border node
             foreach (GraphTriangle triangle in Graph.Triangles)
             {
                 GraphNode node = dualGraph.AddNode(triangle.Circumcircle.Centre);
                 triNodeDict.Add(triangle, node);    // Remeber the nodes association to its triangle
             }
+
+            //
+            // Add cell border edges
+            //
 
             // Find triangles that share an edge, create an edge in dual graph connecting their associated nodes
             foreach (GraphTriangle triangle1 in Graph.Triangles)
@@ -112,6 +120,22 @@ namespace Assets
                     }
                 }
             }
+
+            //
+            // Add cell nuclei 
+            //
+
+            // Each triangle using this node 
+            foreach (GraphNode node in Graph.Nodes)
+            {
+                // Add node as a cell nuclei
+                VoronoiCell cell = dualGraph.AddCell(node.Vector);
+
+                // Add each of this nodes triangle's circumcircle nodes to cell
+                foreach (GraphTriangle triangle in node.Triangles)
+                    cell.AddNode(triNodeDict[triangle]);
+            }
+
 
             return dualGraph;
         }

@@ -10,7 +10,25 @@ namespace UnityEngine
     /// </summary>
     public static class MathExtension
     {
-        public static bool AnyWithinDistance(this Vector2 vector, IEnumerable<Vector2> others, float distance)
+        /// <summary>
+        /// Checks if the convex polygon defined by the points 'polyPoints' contains the given vector
+        /// </summary>
+        public static bool Poly2DContainsPoint(Vector3[] polyPoints, Vector2 vector)
+        { 
+            int j = polyPoints.Length - 1;
+            bool inside = false;
+
+            for (int i = 0; i < polyPoints.Length; j = i++)
+            { 
+                if (((polyPoints[i].y <= vector.y && vector.y < polyPoints[j].y) || (polyPoints[j].y <= vector.y && vector.y < polyPoints[i].y)) && 
+                    (vector.x < (polyPoints[j].x - polyPoints[i].x) * (vector.y - polyPoints[i].y) / (polyPoints[j].y - polyPoints[i].y) + polyPoints[i].x)) 
+                    inside = !inside; 
+            }
+
+            return inside; 
+        }
+
+public static bool AnyWithinDistance(this Vector2 vector, IEnumerable<Vector2> others, float distance)
         {
             return others.Where(v => Vector2.Distance(vector, v) <= distance).Any();
         }

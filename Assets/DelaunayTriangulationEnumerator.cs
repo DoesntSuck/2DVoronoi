@@ -42,7 +42,7 @@ namespace Assets
         public Color VoronoiColor = Color.red;
 
         Graph delaunay;
-        Graph voronoi;
+        VoronoiGraph voronoi;
         GraphNode[] superTriangleNodes;
         HashSet<GraphEdge> insideEdges;
         HashSet<GraphEdge> outsideEdges;
@@ -112,7 +112,7 @@ namespace Assets
                     DrawTriangles(newTriangles, NewTrianglesColor);
 
                 // Draw nodes
-                DrawNodes(delaunay.Nodes, NodeColor, 0.025f);
+                DrawNodes(delaunay.Nodes, NodeColor, 0.01f);
             }
 
             // Draw voronoi graph
@@ -127,7 +127,13 @@ namespace Assets
             {
                 bool end = !stepper.MoveNext();
                 if (end)
-                    voronoi = delaunay.CircumcircleDualGraph();
+                {
+                    voronoi = CircumcircleDualGraph();
+
+                    Collider2D collider = GetComponent<Collider2D>();
+                    if (collider != null)
+                        VoronoiMeshAdapter.Fit(GetComponent<Collider2D>(), voronoi);
+                }
             }
         }
 
@@ -242,6 +248,72 @@ namespace Assets
                 yield return null;
                 newTriangles = null;            // Delete ref so new triangles are no longer drawn
             }
+        }
+
+        /// <summary>
+        /// Creates and returns the voronoi dual graph of this delaunay triangulation. A node is created for each triangle in this graph, the 
+        /// node is position at its associated triangle's circumcentre. Adjacent triangles have their dual nodes connected by an edge.
+        /// </summary>
+        public VoronoiGraph CircumcircleDualGraph()
+        {
+            // Dict to associate triangles with nodes in dual graph
+            Dictionary<GraphTriangle, GraphNode> triNodeDict = new Dictionary<GraphTriangle, GraphNode>();
+            VoronoiGraph dualGraph = new VoronoiGraph();
+
+            //
+            // Add cell border nodes
+            //
+
+            // Create a node for each triangle circumcircle in THIS graph <- constitutes a cell border node
+            foreach (GraphTriangle triangle in delaunay.Triangles)
+            {
+                GraphNode node = dualGraph.AddNode(triangle.Circumcircle.Centre);
+                triNodeDict.Add(triangle, node);    // Remeber the nodes association to its triangle
+            }
+
+            //
+            // Add cell border edges
+            //
+
+            // Find triangles that share an edge, create an edge in dual graph connecting their associated nodes
+            foreach (GraphTriangle triangle1 in delaunay.Triangles)
+            {
+                // Compare each triangle to each other triangle
+                foreach (GraphTriangle triangle2 in delaunay.Triangles.Where(t => t != triangle1))
+                {
+                    foreach (GraphEdge edge in triangle1.Edges)
+                    {
+                        // Check if triangles share an edge
+                        if (triangle2.Contains(edge))
+                        {
+                            // Get associated nodes
+                            GraphNode node1 = triNodeDict[triangle1];
+                            GraphNode node2 = triNodeDict[triangle2];
+
+                            // Add an edge between them
+                            dualGraph.AddEdge(node1, node2);
+                        }
+                    }
+                }
+            }
+
+            //
+            // Add cell nuclei 
+            //
+
+            // Each triangle using this node 
+            foreach (GraphNode node in delaunay.Nodes)
+            {
+                // Add node as a cell nuclei
+                VoronoiCell cell = dualGraph.AddCell(node.Vector);
+
+                // Add each of this nodes triangle's circumcircle nodes to cell
+                foreach (GraphTriangle triangle in node.Triangles)
+                    cell.AddNode(triNodeDict[triangle]);
+            }
+
+
+            return dualGraph;
         }
     }
 }

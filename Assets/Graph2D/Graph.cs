@@ -12,17 +12,17 @@ namespace Graph2D
         /// <summary>
         /// This graphs collection of nodes
         /// </summary>
-        public HashSet<GraphNode> Nodes { get; private set; }
+        public HashSet<GraphNode> Nodes { get; protected set; }
 
         /// <summary>
         /// This graphs collection of edges
         /// </summary>
-        public HashSet<GraphEdge> Edges { get; private set; }
+        public HashSet<GraphEdge> Edges { get; protected set; }
 
         /// <summary>
         /// This graphs collection of triangles
         /// </summary>
-        public HashSet<GraphTriangle> Triangles { get; private set; }
+        public HashSet<GraphTriangle> Triangles { get; protected set; }
 
         public Graph()
         {
@@ -34,7 +34,7 @@ namespace Graph2D
         /// <summary>
         /// Create and add a node that stores the given vector
         /// </summary>
-        public GraphNode AddNode(Vector2 vector)
+        public virtual GraphNode AddNode(Vector2 vector)
         {
             // Create, store, and return new node
             GraphNode newNode = new GraphNode(vector);
@@ -45,7 +45,7 @@ namespace Graph2D
         /// <summary>
         /// Create and add an edge between the given nodes
         /// </summary>
-        public GraphEdge AddEdge(GraphNode node1, GraphNode node2)
+        public virtual GraphEdge AddEdge(GraphNode node1, GraphNode node2)
         {
             // Create new edge and add to list
             GraphEdge edge = new GraphEdge(node1, node2);
@@ -59,7 +59,7 @@ namespace Graph2D
         }
 
         /// <summary>
-        /// Adds a triangle connecting the given nodes. Will throw an exception if the given nodes to not form a triangle 
+        /// Adds a triangle connecting the given nodes. Will throw an exception if the given nodes do not form a triangle 
         /// </summary>
         public GraphTriangle AddTriangle(GraphNode a, GraphNode b, GraphNode c)
         {
@@ -77,7 +77,7 @@ namespace Graph2D
 
             return triangle;
         }
-
+        
         /// <summary>
         /// Creates a triangle connecting the given edge to the given node. Edges are inserted if necessary in order to create the triangle.
         /// </summary>
@@ -87,7 +87,7 @@ namespace Graph2D
             foreach (GraphNode edgeNode in edge.Nodes)
             {
                 // If the graph doesn't contain the required edge, add it
-                if (!ContainsEdge(edgeNode, node))
+                if (!node.HasEdge(edgeNode))
                     AddEdge(edgeNode, node);
             }
 
@@ -98,24 +98,27 @@ namespace Graph2D
         /// <summary>
         /// Removes reference to the given node from this graph. Edges and triangles connected to this node are also removed
         /// </summary>
-        public void Remove(GraphNode node)
+        public virtual void Remove(GraphNode node)
         {
             // Find and remove the node from the node list
             Nodes.Remove(node);
 
+            GraphEdge[] nodeEdges = node.Edges.ToArray();
             // Find and remove all edges attached to the node being removed
-            foreach (GraphEdge edge in node.Edges)
+            foreach (GraphEdge edge in nodeEdges)
                 Remove(edge);
 
+
+            GraphTriangle[] nodeTriangles = node.Triangles.ToArray();
             // Find and remove all triangles attached to the node being removed
-            foreach (GraphTriangle triangle in node.Triangles)
+            foreach (GraphTriangle triangle in nodeTriangles)
                 Remove(triangle);
         }
 
         /// <summary>
         /// Removes the reference to the given edge from this graph. Triangles connected to the edge are also removed; but, constituent nodes remain.
         /// </summary>
-        public void Remove(GraphEdge edge)
+        public virtual void Remove(GraphEdge edge)
         {
             // Remove edge from list of edges
             Edges.Remove(edge);
@@ -147,63 +150,6 @@ namespace Graph2D
             // Remove ref to triangle from constituent edges
             foreach (GraphEdge edge in triangle.Edges)
                 edge.RemoveTriangle(triangle);
-        }
-
-        /// <summary>
-        /// Creates and returns the dual graph of this graph. A node is created for each triangle in this graph, the node is position at its
-        /// associated triangle's circumcentre. Adjacent triangles have their dual nodes connected by an edge.
-        /// </summary>
-        public Graph CircumcircleDualGraph()
-        {
-            // Dict to associate triangles with nodes in dual graph
-            Dictionary<GraphTriangle, GraphNode> triNodeDict = new Dictionary<GraphTriangle, GraphNode>();
-            Graph dualGraph = new Graph();
-
-            // Create a node for each triangle in THIS graph
-            foreach (GraphTriangle triangle in Triangles)
-            {
-                GraphNode node = dualGraph.AddNode(triangle.Circumcircle.Centre);
-                triNodeDict.Add(triangle, node);    // Remeber the nodes association to its triangle
-            }
-
-            // Find triangles that share an edge, create an edge in dual graph connecting their associated nodes
-            foreach (GraphTriangle triangle1 in Triangles)
-            {
-                // Compare each triangle to each other triangle
-                foreach (GraphTriangle triangle2 in Triangles.Where(t => t != triangle1))
-                {
-                    foreach (GraphEdge edge in triangle1.Edges)
-                    {
-                        // Check if triangles share an edge
-                        if (triangle2.Contains(edge))
-                        {
-                            // Get associated nodes
-                            GraphNode node1 = triNodeDict[triangle1];
-                            GraphNode node2 = triNodeDict[triangle2];
-
-                            // Add an edge between them
-                            dualGraph.AddEdge(node1, node2);
-                        }
-                    }
-                }
-            }
-
-            return dualGraph;
-        }
-
-        /// <summary>
-        /// Checks if thie graph contains an edge between the given nodes
-        /// </summary>
-        public bool ContainsEdge(GraphNode a, GraphNode b)
-        {
-            // Check if any edge contains BOTH the given points
-            foreach (GraphEdge edge in Edges)
-            {
-                if (edge.Contains(a, b))
-                    return true;
-            }
-
-            return false;
         }
     }
 }
