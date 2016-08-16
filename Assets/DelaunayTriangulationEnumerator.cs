@@ -11,6 +11,10 @@ namespace Assets
         [Tooltip("The extents of the super triangle that encorporates all nodes in the delaunay triangulation")]
         public Vector2 SuperTriangleExtents = new Vector2(2.5f, 2.5f);
 
+        [Tooltip("The radius in which random vectors are inserted")]
+        [Range(0.01f, 5)]
+        public float Radius = 1;
+
         [Tooltip("The minimum distance between each randomly inserted node")]
         [Range(0, 1)]
         public float Spacing = 0.1f;
@@ -47,41 +51,17 @@ namespace Assets
         HashSet<GraphEdge> insideEdges;
         HashSet<GraphEdge> outsideEdges;
         List<GraphTriangle> newTriangles;
-        IEnumerator stepper;
+        Coroutine stepwiseDelaunay;
 
         void Awake()
         {
             // Create graph and insert super triangle
             delaunay = new Graph();
-            superTriangleNodes = GraphUtility.InsertSuperTriangle(delaunay, Vector2.zero, SuperTriangleExtents.magnitude);
 
-            // Randomly generate NodeCount number of vectors IF none have been input to vectors array
-            if (vectors.Length == 0)
-            {
-                // Random vector within unit circle
-                vectors = new Vector2[NodeCount];
-                for (int i = 0; i < vectors.Length; i++)
-                {
-                    // Generate new vector to be inserted
-                    Vector2 newVector = Random.insideUnitCircle;
-
-                    // Get array sub array of vectors that have already been generated
-                    Vector2[] others = vectors.SubArray(0, i);
-
-                    // Generate a replacement vector until the new vector is not within range of any other vector
-                    while (newVector.AnyWithinDistance(others, Spacing))
-                        newVector = Random.insideUnitCircle;
-
-                    // Once vector passes test add it to array
-                    vectors[i] = newVector;
-                }
-            }
 
             // Keep debug counts up to date
             EdgeCount = delaunay.Edges.Count;
             TriangleCount = delaunay.Triangles.Count;
-
-            stepper = GetStepEnumerator(vectors);
         }
 
         void OnDrawGizmos()
@@ -102,7 +82,7 @@ namespace Assets
                 // Draw outside edges
                 if (outsideEdges != null)
                     DrawEdges(outsideEdges, OutsideEdgesColor);
-                
+
                 // Draw inside edges
                 if (insideEdges != null)
                     DrawEdges(insideEdges, InsideEdgesColor);
@@ -120,21 +100,45 @@ namespace Assets
                 DrawEdges(voronoi.Edges, VoronoiColor);
         }
 
-        void Update()
+        void OnMouseDown()
         {
-            // Move to next part of triangulation when the left mouse button is pressed
-            if (Input.GetButtonDown("Fire1"))
+            if (stepwiseDelaunay == null)
             {
-                bool end = !stepper.MoveNext();
-                if (end)
-                {
-                    voronoi = CircumcircleDualGraph();
+                // Mouse position to ray
+                Ray screenRay = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-                    Collider2D collider = GetComponent<Collider2D>();
-                    if (collider != null)
-                        VoronoiMeshAdapter.Fit(GetComponent<Collider2D>(), voronoi);
-                }
+                // Get the position on collider that was hit. THERE IS ONLY ONE COLLIDER IN SCENE SO ONLY THAT COLLIDER CAN GET HIT
+                RaycastHit2D hitInfo = Physics2D.GetRayIntersection(screenRay);
+
+                // Generate seed cloud of points
+                vectors = GeneratePoints(NodeCount, hitInfo.point, Radius);
+
+                // Start stepping through delaunay triangulation
+                stepwiseDelaunay = StartCoroutine(StepwiseDelaunay(vectors));
             }
+        }
+
+        private Vector2[] GeneratePoints(int count, Vector2 origin, float distance)
+        {
+            Vector2[] points = new Vector2[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                // Generate new vector to be inserted
+                Vector2 newVector = MathExtension.RandomVectorFromTriangularDistribution(origin, distance);
+
+                // Get array sub array of vectors that have already been generated
+                Vector2[] others = points.SubArray(0, i);
+
+                // Generate a replacement vector until the new vector is not within range of any other vector
+                while (newVector.AnyWithinDistance(others, Spacing))
+                    newVector = MathExtension.RandomVectorFromTriangularDistribution(origin, distance);
+
+                // Once vector passes test add it to array
+                points[i] = newVector;
+            }
+
+            return points;
         }
 
         private void DrawNodes(IEnumerable<GraphNode> nodes, Color color, float radius)
@@ -201,8 +205,21 @@ namespace Assets
             UnityEditor.Handles.color = original;
         }
 
-        private IEnumerator GetStepEnumerator(Vector2[] vectors)
+        private IEnumerator WaitForKeyInput(KeyCode keyCode)
         {
+            do
+            {
+                yield return null;
+            } while (!Input.GetKeyDown(keyCode));
+        }
+
+        private IEnumerator StepwiseDelaunay(Vector2[] vectors)
+        {
+            // Insert super triangle
+            superTriangleNodes = GraphUtility.InsertSuperTriangle(delaunay, Vector2.zero, SuperTriangleExtents.magnitude);
+
+            yield return StartCoroutine(WaitForKeyInput(KeyCode.Space));
+
             foreach (Vector2 vector in vectors)
             {
                 // Insert new node
@@ -219,7 +236,7 @@ namespace Assets
                 // Save to property so can view outside class
                 this.insideEdges = insideEdges;
                 this.outsideEdges = outsideEdges;
-                yield return null;
+                yield return StartCoroutine(WaitForKeyInput(KeyCode.Space));
 
                 // Remove guilty triangle refs from graph
                 foreach (GraphTriangle guiltyTriangle in guiltyTriangles)
@@ -232,7 +249,7 @@ namespace Assets
                 this.insideEdges = null;        // Delete ref so inside edges are no longer drawn
                 EdgeCount = delaunay.Edges.Count;
                 TriangleCount = delaunay.Triangles.Count;
-                yield return null;
+                yield return StartCoroutine(WaitForKeyInput(KeyCode.Space));
 
                 // Triangulate the hole
                 newTriangles = new List<GraphTriangle>();
@@ -245,9 +262,21 @@ namespace Assets
                 this.outsideEdges = null;       // Delete ref so outside edges are no longer drawn
                 EdgeCount = delaunay.Edges.Count;
                 TriangleCount = delaunay.Triangles.Count;
-                yield return null;
+                yield return StartCoroutine(WaitForKeyInput(KeyCode.Space));
                 newTriangles = null;            // Delete ref so new triangles are no longer drawn
             }
+
+            yield return StartCoroutine(WaitForKeyInput(KeyCode.Space));
+
+            // Generate voronoi graph
+            voronoi = CircumcircleDualGraph();
+
+            yield return StartCoroutine(WaitForKeyInput(KeyCode.Space));
+
+            // Fit voronoi graph to object's collider
+            Collider2D collider = GetComponent<Collider2D>();
+            if (collider != null)
+                VoronoiMeshAdapter.Fit(GetComponent<Collider2D>(), voronoi);
         }
 
         /// <summary>

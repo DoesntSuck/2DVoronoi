@@ -10,29 +10,58 @@ namespace UnityEngine
     /// </summary>
     public static class MathExtension
     {
+        public static Vector2 RandomVectorFromTriangularDistribution(Vector2 origin, float maxDistance)
+        {
+            // Random vertex represent the distance to move from the origin
+            Vector2 direction = Random.insideUnitCircle;
+
+            // Random number from triangular distibution that determines the distance to place point away from the origin
+            float distance = RandomTriangular(0, maxDistance, 0);
+
+            // Random vector within 'maxDistance' range that tends towards the origin
+            return origin + (direction * distance);
+        }
+
+        // https://en.wikipedia.org/wiki/Triangular_distribution
+        // Calculates a random number from a triangular distribution
+        public static float RandomTriangular(float min, float max, float mid)
+        {
+            // Generate float from uniform distribution
+            float unifrom = Random.Range(0.0f, 1.0f);
+
+            // Mid point in the range 0, 1
+            float F = (mid - min) / (max - min);
+
+            // If random number from unifrom distribution occurs on lhs of mid point
+            if (unifrom <= F)
+                return min + Mathf.Sqrt(unifrom * (max - min) * (mid - min));
+            else // ...or occurs on rhs of mid point
+                return max - Mathf.Sqrt((1 - unifrom) * (max - min) * (max - mid));
+        }
+
         /// <summary>
         /// Checks if the convex polygon defined by the points 'polyPoints' contains the given vector
         /// </summary>
         public static bool Poly2DContainsPoint(Vector3[] polyPoints, Vector2 vector)
-        { 
+        {
             int j = polyPoints.Length - 1;
             bool inside = false;
 
             for (int i = 0; i < polyPoints.Length; j = i++)
-            { 
-                if (((polyPoints[i].y <= vector.y && vector.y < polyPoints[j].y) || (polyPoints[j].y <= vector.y && vector.y < polyPoints[i].y)) && 
-                    (vector.x < (polyPoints[j].x - polyPoints[i].x) * (vector.y - polyPoints[i].y) / (polyPoints[j].y - polyPoints[i].y) + polyPoints[i].x)) 
-                    inside = !inside; 
+            {
+                if (((polyPoints[i].y <= vector.y && vector.y < polyPoints[j].y) || (polyPoints[j].y <= vector.y && vector.y < polyPoints[i].y)) &&
+                    (vector.x < (polyPoints[j].x - polyPoints[i].x) * (vector.y - polyPoints[i].y) / (polyPoints[j].y - polyPoints[i].y) + polyPoints[i].x))
+                    inside = !inside;
             }
 
-            return inside; 
+            return inside;
         }
 
-public static bool AnyWithinDistance(this Vector2 vector, IEnumerable<Vector2> others, float distance)
+        public static bool AnyWithinDistance(this Vector2 vector, IEnumerable<Vector2> others, float distance)
         {
             return others.Where(v => Vector2.Distance(vector, v) <= distance).Any();
         }
-        
+
         /// <summary>
         /// Calculates the circumcircle of the triangle defined by the given position vectors
         /// </summary>

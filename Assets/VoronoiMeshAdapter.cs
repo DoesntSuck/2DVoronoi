@@ -46,12 +46,21 @@ namespace Assets
                             // Find intersection point
                             RaycastHit2D hitInfo;
                             collider.Linecast(node.Vector, insideNode.Vector, out hitInfo);
-
+                            
                             // Add node at intersection point
                             GraphNode intersectionNode = voronoi.AddNode(hitInfo.point);
 
                             // Add edge from intersection point to insideNode
                             voronoi.AddEdge(intersectionNode, insideNode);
+
+                            // Get collection of cells that use the outside node
+                            List<VoronoiCell> affectedCells = voronoi.GetCells(node);
+                            foreach (VoronoiCell cell in affectedCells)
+                            {
+                                // Replace the outside node with the newly inserted one
+                                cell.Remove(node);
+                                cell.AddNode(intersectionNode);
+                            }
                         }
                     }
 
