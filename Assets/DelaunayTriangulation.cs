@@ -21,7 +21,7 @@ namespace Assets
         /// </summary>
         /// <param name="origin">Centre of the super triangle incircle</param>
         /// <param name="radius">Radius of the super triangle incircle</param>
-        private DelaunayTriangulation(Vector2 origin, float radius)
+        public DelaunayTriangulation(Vector2 origin, float radius)
         {
             Graph = new Graph();
 

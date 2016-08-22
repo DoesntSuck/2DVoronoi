@@ -12,7 +12,7 @@ namespace Graph2D
         /// <summary>
         /// This graphs collection of nodes
         /// </summary>
-        public HashSet<GraphNode> Nodes { get; protected set; }
+        public List<GraphNode> Nodes { get; protected set; }
 
         /// <summary>
         /// This graphs collection of edges
@@ -26,9 +26,27 @@ namespace Graph2D
 
         public Graph()
         {
-            Nodes = new HashSet<GraphNode>();
+            Nodes = new List<GraphNode>();
             Edges = new HashSet<GraphEdge>();
             Triangles = new HashSet<GraphTriangle>();
+        }
+
+        /// <summary>
+        /// Creates a graph from the given mesh.
+        /// </summary>
+        public Graph(Mesh mesh) 
+            : this()
+        {
+            // Add each vert as a node to graph
+            Nodes = new List<GraphNode>(mesh.vertexCount);
+            foreach (Vector3 vert in mesh.vertices)
+                AddNode(vert);
+
+            // TODO: POSSIBLE BUG! duplicate vertices ARE added BUT duplicate edges ARE NOT added (because of edge.Contains() check in CreateTriangle())
+
+            // Create triangle using mesh tri indices as node indices
+            for (int i = 0; i < mesh.triangles.Length - 2; i += 3)
+                CreateTriangle(Nodes[mesh.triangles[i]], Nodes[mesh.triangles[i + 1]], Nodes[mesh.triangles[i + 2]]);
         }
 
         /// <summary>
@@ -93,6 +111,17 @@ namespace Graph2D
 
             // Create triangle between nodes
             return AddTriangle(edge.Nodes[0], edge.Nodes[1], node);
+        }
+
+        public GraphTriangle CreateTriangle(GraphNode a, GraphNode b, GraphNode c)
+        {
+            // Add edges if need be
+            if (!a.HasEdge(b)) AddEdge(a, b);
+            if (!a.HasEdge(c)) AddEdge(a, c);
+            if (!b.HasEdge(c)) AddEdge(b, c);
+
+            // Create triangle
+            return AddTriangle(a, b, c);
         }
 
         /// <summary>

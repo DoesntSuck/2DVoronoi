@@ -10,6 +10,80 @@ namespace UnityEngine
     /// </summary>
     public static class MathExtension
     {
+        public static Vector2 PolygonCentre(List<Vector2> polygonPoints)
+        {
+            float signedArea = PolygonSignedArea(polygonPoints);
+
+            // Cx = 1 / 6A 0Σn-1 (xi + x(i + 1)) * (xi * y(i+1) - x(i + 1) * yi)
+            // Cy = 1 / 6A 0Σn-1 (yi + y(i + 1)) * (xi * y(i+1) - x(i + 1) * yi)
+
+            float cx = 0;
+            float cy = 0;
+
+            for (int i = 0; i < polygonPoints.Count; i++)
+            {
+                Vector2 currentPoint = polygonPoints[i];
+                Vector2 adjacentPoint = polygonPoints[(i + 1) % polygonPoints.Count];
+
+                // (xi * y(i+1) - x(i + 1) * yi)
+                float commonFactor = (currentPoint.x * adjacentPoint.y) - (adjacentPoint.x * currentPoint.y);
+
+                cx += (currentPoint.x + adjacentPoint.x) * commonFactor;    // (xi + x(i + 1))
+                cy += (currentPoint.y + adjacentPoint.y) * commonFactor;    // (yi + y(i + 1))
+            }
+
+            // 1 / 6A
+            float oneOverSixA = 1 / (6 * signedArea);
+
+            cx *= oneOverSixA;
+            cy += oneOverSixA;
+
+            return new Vector2(cx, cy);
+        }
+
+        /// <summary>
+        /// Calculates the area of the polygon described by the given points. The given points do NOT need to be in clockwise order but each adjacent point in the list
+        /// must for an edge on the polygon
+        /// </summary>
+        public static float PolygonSignedArea(List<Vector2> polygonPoints)
+        {
+            // A =  1 / 2  0Σn-1 (xi * y(i + 1) - x(i + 1) * yi)
+            float signedArea = 0;
+            for (int i = 0; i < polygonPoints.Count; i++)
+            {
+                Vector2 currentPoint = polygonPoints[i];
+                Vector2 adjacentPoint = polygonPoints[(i + 1) % polygonPoints.Count];
+
+                signedArea += (currentPoint.x * adjacentPoint.y - adjacentPoint.x - currentPoint.y);
+            }
+
+            signedArea *= 0.5f;
+
+            return signedArea;
+        }
+
+        public static Vector2 KnownIntersection(Vector2 line1Point1, Vector2 line1Point2, Vector2 line2Point1, Vector2 line2Point2)
+        {
+            Vector2d intersection = new Vector2d();
+            if (!Mathd.LineIntersection(line1Point1, line1Point2, line2Point1, line2Point2, ref intersection))
+                throw new ArgumentException("Lines do not intersect");
+
+            return new Vector2((float)intersection.x, (float)intersection.y);
+        }
+
+        /// <summary>
+        /// Determines which side of a line a point lies on. 0 = on line, -1 = one side, +1 = other side
+        /// </summary>
+        public static float Side(Vector2 edgePoint1, Vector2 edgePoint2, Vector2 point)
+        {
+            // position = sign((Bx - Ax) * (Y - Ay) - (By - Ay) * (X - Ax))
+            float determinant = (edgePoint2.x - edgePoint1.x) * (point.y - edgePoint1.y) - (edgePoint2.y - edgePoint1.y) * (point.x - edgePoint1.x);
+
+            // Mathf.Sign returns 1 when determinant is 0, so need to test for this
+            if (determinant == 0) return 0;
+            else return Mathf.Sign(determinant);
+        }
+
         public static Vector2 RandomVectorFromTriangularDistribution(Vector2 origin, float maxDistance)
         {
             // Random vertex represent the distance to move from the origin
@@ -42,12 +116,12 @@ namespace UnityEngine
         /// <summary>
         /// Checks if the convex polygon defined by the points 'polyPoints' contains the given vector
         /// </summary>
-        public static bool Poly2DContainsPoint(Vector3[] polyPoints, Vector2 vector)
+        public static bool Poly2DContainsPoint(List<Vector2> polyPoints, Vector2 vector)
         {
-            int j = polyPoints.Length - 1;
+            int j = polyPoints.Count - 1;
             bool inside = false;
 
-            for (int i = 0; i < polyPoints.Length; j = i++)
+            for (int i = 0; i < polyPoints.Count; j = i++)
             {
                 if (((polyPoints[i].y <= vector.y && vector.y < polyPoints[j].y) || (polyPoints[j].y <= vector.y && vector.y < polyPoints[i].y)) &&
                     (vector.x < (polyPoints[j].x - polyPoints[i].x) * (vector.y - polyPoints[i].y) / (polyPoints[j].y - polyPoints[i].y) + polyPoints[i].x))
