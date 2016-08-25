@@ -71,6 +71,17 @@ namespace Graph2D
             return Nodes.Contains(node);
         }
 
+        public bool ContainsAny(params GraphNode[] nodes)
+        {
+            foreach (GraphNode node in nodes)
+            {
+                if (Contains(node))
+                    return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Check if this triangle contains the given edge
         /// </summary>

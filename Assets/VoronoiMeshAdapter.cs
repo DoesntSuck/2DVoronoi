@@ -99,53 +99,134 @@ namespace Assets
 
         }
 
-        public static List<VoronoiCell> CropCells(Graph meshGraph, List<VoronoiCell> cells)
+
+
+        public static List<List<Vector2>> CropMesh(Mesh mesh, List<VoronoiCell> cells)
         {
             // Crop EACH voronoi cell
             // Clip() outputs a list of vectors, but voronoi cell wants nodes and edges
+            List<List<Vector2>> intersectionPolygons = new List<List<Vector2>>();
             foreach (VoronoiCell cell in cells)
             {
+                // Order voronoi cell border nodes in a clockwise order so that points on left of voronoi edges are inside cell.
+                cell.OrderByClockwise();
                 List<Vector2> intersectionPolygon = Clip(cell, meshGraph);
+
+                // Add intersection polygon to list
+                intersectionPolygons.Add(intersectionPolygon);
             }
 
-            return null;
+            return intersectionPolygons;
         }
 
-        public static List<Vector2> Clip(VoronoiCell clipPolygon, Graph subjectPolygon)
-        {
-            // Get vectors from graph
-            IEnumerable<Vector2> polygonVectors = subjectPolygon.Nodes.Select(n => n.Vector);
-            List<Vector2> outputList = new List<Vector2>(polygonVectors);
+        //public static List<Vector2> Clip(VoronoiCell clipPolygon, Graph subjectPolygon)
+        //{
+        //    // Get vectors from graph
+        //    IEnumerable<Vector2> polygonVectors = subjectPolygon.Nodes.Select(n => n.Vector);
+        //    List<Vector2> outputList = new List<Vector2>(polygonVectors);
 
-            foreach (GraphEdge edge in clipPolygon.Edges)
+        //    foreach (GraphEdge edge in clipPolygon.Edges)
+        //    {
+        //        // Copy outputList items to new list
+        //        List<Vector2> inputList = outputList.ToList();
+        //        outputList.Clear();
+
+        //        // Adjacent vector pairs s and e form an edge in subjectPolygon
+        //        Vector2 s = inputList.Last();
+        //        foreach (Vector2 e in inputList)
+        //        {
+        //            // If e is inside clip edge
+        //            if (MathExtension.Side(edge.Nodes[0].Vector, edge.Nodes[1].Vector, e) <= 0)
+        //            {
+        //                // If s is outside clip edge
+        //                if (MathExtension.Side(edge.Nodes[0].Vector, edge.Nodes[1].Vector, s) > 0)
+        //                    outputList.Add(MathExtension.KnownIntersection(s, e, edge.Nodes[0].Vector, edge.Nodes[1].Vector));
+
+        //                outputList.Add(e);
+        //            }
+
+        //            // If s is inside clip edge
+        //            else if (MathExtension.Side(edge.Nodes[0].Vector, edge.Nodes[1].Vector, s) <= 0)
+        //                outputList.Add(MathExtension.KnownIntersection(s, e, edge.Nodes[0].Vector, edge.Nodes[1].Vector));
+
+        //            s = e;
+        //        }
+        //    }
+
+        //    return outputList;
+        //}
+
+        public static void Clip(Mesh subjectPolygon, VoronoiCell clipPolygon)
+        {
+            // Create graph from mesh
+            Graph outputGraph = new Graph(subjectPolygon);
+
+            foreach (GraphEdge clipPolygonEdge in clipPolygon.Edges)
             {
-                // Copy outputList items to new list
-                List<Vector2> inputList = outputList.ToList();
-                outputList.Clear();
+                List<GraphEdge> subjectPolygonEdges = new List<GraphEdge>(outputGraph.Edges);
+                outputGraph.Clear();
 
                 // Adjacent vector pairs s and e form an edge in subjectPolygon
-                Vector2 s = inputList.Last();
-                foreach (Vector2 e in inputList)
+                for (int i = subjectPolygonEdges.Count - 1; i >= 0; i--)
                 {
+                    Vector2 s = subjectPolygonEdges[i].Nodes[0].Vector;
+                    Vector2 e = subjectPolygonEdges[i].Nodes[1].Vector;
+
                     // If e is inside clip edge
-                    if (MathExtension.Side(edge.Nodes[0].Vector, edge.Nodes[1].Vector, e) <= 0)
+                    if (MathExtension.Side(clipPolygonEdge.Nodes[0].Vector, clipPolygonEdge.Nodes[1].Vector, e) <= 0)
                     {
                         // If s is outside clip edge
-                        if (MathExtension.Side(edge.Nodes[0].Vector, edge.Nodes[1].Vector, s) > 0)
-                            outputList.Add(MathExtension.KnownIntersection(s, e, edge.Nodes[0].Vector, edge.Nodes[1].Vector));
-
-                        outputList.Add(e);
+                        if (MathExtension.Side(clipPolygonEdge.Nodes[0].Vector, clipPolygonEdge.Nodes[1].Vector, s) > 0)
+                            s = MathExtension.KnownIntersection(s, e, clipPolygonEdge.Nodes[0].Vector, clipPolygonEdge.Nodes[1].Vector);
                     }
 
-                    // If s is inside clip edge
-                    else if (MathExtension.Side(edge.Nodes[0].Vector, edge.Nodes[1].Vector, s) <= 0)
-                        outputList.Add(MathExtension.KnownIntersection(s, e, edge.Nodes[0].Vector, edge.Nodes[1].Vector));
+                    // e IS NOT inside. Check if s is inside clip edge
+                    else if (MathExtension.Side(clipPolygonEdge.Nodes[0].Vector, clipPolygonEdge.Nodes[1].Vector, s) <= 0)
+                        e = MathExtension.KnownIntersection(s, e, clipPolygonEdge.Nodes[0].Vector, clipPolygonEdge.Nodes[1].Vector);
 
-                    s = e;
+                    GraphNode startNode = outputGraph.AddNode(s);
+                    GraphNode endNode = outputGraph.AddNode(e);
+
+                    outputGraph.AddEdge(startNode, endNode);
                 }
             }
+        }
 
-            return outputList;
+        public static void Clip2(Mesh subjectPolygon, VoronoiCell clipPolygon)
+        {
+            // Create graph from mesh
+            Graph outputGraph = new Graph(subjectPolygon);
+
+            foreach (GraphEdge clipPolygonEdge in clipPolygon.Edges)
+            {
+                List<GraphTriangle> subjectPolygonTriangles = new List<GraphTriangle>(outputGraph.Triangles);
+                outputGraph.Clear();
+
+                // Adjacent vector pairs s and e form an edge in subjectPolygon
+                for (int i = subjectPolygonTriangles.Count - 1; i >= 0; i--)
+                {
+                    Vector2 a = subjectPolygonTriangles[i].Nodes[0].Vector;
+                    Vector2 b = subjectPolygonTriangles[i].Nodes[1].Vector;
+                    Vector2 c = subjectPolygonTriangles[i].Nodes[2].Vector;
+
+                    // If e is inside clip edge
+                    if (MathExtension.Side(clipPolygonEdge.Nodes[0].Vector, clipPolygonEdge.Nodes[1].Vector, e) <= 0)
+                    {
+                        // If s is outside clip edge
+                        if (MathExtension.Side(clipPolygonEdge.Nodes[0].Vector, clipPolygonEdge.Nodes[1].Vector, s) > 0)
+                            s = MathExtension.KnownIntersection(s, e, clipPolygonEdge.Nodes[0].Vector, clipPolygonEdge.Nodes[1].Vector);
+                    }
+
+                    // e IS NOT inside. Check if s is inside clip edge
+                    else if (MathExtension.Side(clipPolygonEdge.Nodes[0].Vector, clipPolygonEdge.Nodes[1].Vector, s) <= 0)
+                        e = MathExtension.KnownIntersection(s, e, clipPolygonEdge.Nodes[0].Vector, clipPolygonEdge.Nodes[1].Vector);
+
+                    GraphNode startNode = outputGraph.AddNode(s);
+                    GraphNode endNode = outputGraph.AddNode(e);
+
+                    outputGraph.AddEdge(startNode, endNode);
+                }
+            }
         }
     }
 }

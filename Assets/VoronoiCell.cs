@@ -13,6 +13,26 @@ namespace Assets
         public List<GraphNode> Nodes { get; private set; }
         public List<GraphEdge> Edges { get; private set; }
 
+        public Vector2 Centre
+        {
+            get
+            {
+                if (centreNode == null)
+                {
+                    // Convert from list of nodes to list of vectors
+                    List<Vector2> polygonPoints = GetAdjacentNodeEnumerator().Select(n => n.Vector).ToList();
+
+                    // Calculate centre of cell polygon
+                    Vector2 centre = MathExtension.PolygonCentre(polygonPoints);
+
+                    centreNode = new GraphNode(centre);
+                }
+
+                return centreNode.Vector;
+            }
+        }
+        private GraphNode centreNode;
+
         public VoronoiCell(Vector2 nuclei)
         {
             Nuclei = nuclei;
@@ -53,6 +73,31 @@ namespace Assets
             return Edges.Contains(edge);
         }
 
+        /// <summary>
+        /// Orders the nodes and edges in this cell in a clockwise order, relative to cell centre, starting at the current first node in list
+        /// </summary>
+        public void OrderByClockwise()
+        {
+            // Order nodes clockwise around polygon centre
+            Nodes = GetAdjacentNodeEnumerator(true).ToList();
+
+            // Order edges
+            List<GraphEdge> orderedEdges = new List<GraphEdge>(Edges.Count);
+            for (int i = 0; i < Nodes.Count; i++)
+            {
+                // Find edge that connects this node to next clockwise node
+                foreach (GraphEdge edge in Edges)
+                {
+                    if (edge.Contains(Nodes[i], Nodes[(i + 1) % Nodes.Count]))
+                    {
+                        // Edge is found, stop looking
+                        orderedEdges.Add(edge);
+                        break;
+                    }
+                }
+            }
+        }
+
         public IEnumerable<GraphNode> GetAdjacentNodeEnumerator(bool clockwise = false)
         {
             HashSet<GraphNode> visitedNodes = new HashSet<GraphNode>();
@@ -86,12 +131,6 @@ namespace Assets
 
         public GraphNode GetNextClockwiseNode(GraphNode node)
         {
-            // Get adjacent nodes, convert from list of nodes to list of vectors
-            List<Vector2> polygonPoints = GetAdjacentNodeEnumerator().Select(n => n.Vector).ToList();
-
-            // Calculate centre of cell polygon
-            Vector2 centre = MathExtension.PolygonCentre(polygonPoints);
-
             foreach (GraphEdge edge in Edges)
             {
                 // Find adjacent edge, check its other node to see if it is clockwise
@@ -100,7 +139,7 @@ namespace Assets
                     GraphNode adjacentNode = edge.GetOther(node);
 
                     // Check which side the node is on
-                    float side = MathExtension.Side(node.Vector, centre, adjacentNode.Vector);
+                    float side = MathExtension.Side(node.Vector, Centre, adjacentNode.Vector);
 
                     // If node is clockwise, return it
                     if (side <= 0)

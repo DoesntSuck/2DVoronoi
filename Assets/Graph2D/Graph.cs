@@ -38,15 +38,22 @@ namespace Graph2D
             : this()
         {
             // Add each vert as a node to graph
-            Nodes = new List<GraphNode>(mesh.vertexCount);
             foreach (Vector3 vert in mesh.vertices)
                 AddNode(vert);
 
-            // TODO: POSSIBLE BUG! duplicate vertices ARE added BUT duplicate edges ARE NOT added (because of edge.Contains() check in CreateTriangle())
-
             // Create triangle using mesh tri indices as node indices
             for (int i = 0; i < mesh.triangles.Length - 2; i += 3)
-                CreateTriangle(Nodes[mesh.triangles[i]], Nodes[mesh.triangles[i + 1]], Nodes[mesh.triangles[i + 2]]);
+            {
+                GraphNode a = Nodes[mesh.triangles[i]];
+                GraphNode b = Nodes[mesh.triangles[i + 1]];
+                GraphNode c = Nodes[mesh.triangles[i + 2]];
+
+                GraphEdge ab = AddEdge(a, b);
+                GraphEdge ac = AddEdge(a, c);
+                GraphEdge bc = AddEdge(b, c);
+
+                AddTriangle(a, b, c);
+            }
         }
 
         /// <summary>
@@ -179,6 +186,24 @@ namespace Graph2D
             // Remove ref to triangle from constituent edges
             foreach (GraphEdge edge in triangle.Edges)
                 edge.RemoveTriangle(triangle);
+        }
+
+        public void Clear()
+        {
+            Nodes = new List<GraphNode>();
+            Edges = new HashSet<GraphEdge>();
+            Triangles = new HashSet<GraphTriangle>();
+        }
+
+        public GraphNode FindNode(Vector2 vector)
+        {
+            foreach (GraphNode node in Nodes)
+            {
+                if (node.Vector == vector)
+                    return node;
+            }
+
+            return null;
         }
     }
 }

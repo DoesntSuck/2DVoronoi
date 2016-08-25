@@ -54,6 +54,5 @@ namespace Graph2D
                 }
             }
         }
-
     }
 }

@@ -64,54 +64,21 @@ namespace Assets
             TriangleCount = delaunay.Triangles.Count;
         }
 
-        void OnDrawGizmos()
-        {
-            // Draw delaunay graph
-            if (delaunay != null)
-            {
-                // Draw circumcircles
-                if (DrawCircumcircle)
-                    DrawCircumcircles(delaunay.Triangles, CircumcircleColor);
-
-                // Draw edges
-                DrawEdges(delaunay.Edges, EdgeColor);
-
-                // Draw triangles
-                DrawTriangles(delaunay.Triangles, TriangleColor);
-
-                // Draw outside edges
-                if (outsideEdges != null)
-                    DrawEdges(outsideEdges, OutsideEdgesColor);
-
-                // Draw inside edges
-                if (insideEdges != null)
-                    DrawEdges(insideEdges, InsideEdgesColor);
-
-                // Draw newly inserted triangles
-                if (newTriangles != null)
-                    DrawTriangles(newTriangles, NewTrianglesColor);
-
-                // Draw nodes
-                DrawNodes(delaunay.Nodes, NodeColor, 0.01f);
-            }
-
-            // Draw voronoi graph
-            if (voronoi != null)
-                DrawEdges(voronoi.Edges, VoronoiColor);
-        }
-
         void OnMouseDown()
         {
             if (stepwiseDelaunay == null)
             {
-                // Mouse position to ray
-                Ray screenRay = Camera.main.ScreenPointToRay(Input.mousePosition);
+                if (vectors.Length == 0)
+                {
+                    // Mouse position to ray
+                    Ray screenRay = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-                // Get the position on collider that was hit. THERE IS ONLY ONE COLLIDER IN SCENE SO ONLY THAT COLLIDER CAN GET HIT
-                RaycastHit2D hitInfo = Physics2D.GetRayIntersection(screenRay);
+                    // Get the position on collider that was hit. THERE IS ONLY ONE COLLIDER IN SCENE SO ONLY THAT COLLIDER CAN GET HIT
+                    RaycastHit2D hitInfo = Physics2D.GetRayIntersection(screenRay);
 
-                // Generate seed cloud of points
-                vectors = GeneratePoints(NodeCount, hitInfo.point, Radius);
+                    // Generate seed cloud of points
+                    vectors = GeneratePoints(NodeCount, hitInfo.point, Radius);
+                }
 
                 // Start stepping through delaunay triangulation
                 stepwiseDelaunay = StartCoroutine(StepwiseDelaunay(vectors));
@@ -139,6 +106,44 @@ namespace Assets
             }
 
             return points;
+        }
+
+        #region GIZMO DRAWING
+
+        void OnDrawGizmos()
+        {
+            // Draw delaunay graph
+            if (delaunay != null)
+            {
+                // Draw circumcircles
+                if (DrawCircumcircle)   // Draw only circumcircles not relating to the super triangle
+                    DrawCircumcircles(delaunay.Triangles.Where(t => !t.ContainsAny(superTriangleNodes)), CircumcircleColor);
+
+                // Draw edges
+                DrawEdges(delaunay.Edges, EdgeColor);
+
+                // Draw triangles
+                DrawTriangles(delaunay.Triangles, TriangleColor);
+
+                // Draw outside edges
+                if (outsideEdges != null)
+                    DrawEdges(outsideEdges, OutsideEdgesColor);
+
+                // Draw inside edges
+                if (insideEdges != null)
+                    DrawEdges(insideEdges, InsideEdgesColor);
+
+                // Draw newly inserted triangles
+                if (newTriangles != null)
+                    DrawTriangles(newTriangles, NewTrianglesColor);
+
+                // Draw nodes
+                DrawNodes(delaunay.Nodes, NodeColor, 0.01f);
+            }
+
+            // Draw voronoi graph
+            if (voronoi != null)
+                DrawEdges(voronoi.Edges, VoronoiColor);
         }
 
         private void DrawNodes(IEnumerable<GraphNode> nodes, Color color, float radius)
@@ -204,6 +209,8 @@ namespace Assets
             // Reset color to original
             UnityEditor.Handles.color = original;
         }
+
+        #endregion
 
         private IEnumerator WaitForKeyInput(KeyCode keyCode)
         {
@@ -273,10 +280,15 @@ namespace Assets
 
             yield return StartCoroutine(WaitForKeyInput(KeyCode.Space));
 
-            // Fit voronoi graph to object's collider
-            Collider2D collider = GetComponent<Collider2D>();
-            if (collider != null)
-                VoronoiMeshAdapter.Fit(GetComponent<Collider2D>(), voronoi);
+            //// Fit voronoi graph to object's collider
+            //Collider2D collider = GetComponent<Collider2D>();
+            //if (collider != null)
+            //    VoronoiMeshAdapter.Fit(GetComponent<Collider2D>(), voronoi);
+
+            Mesh mesh = GetComponent<MeshFilter>().mesh;
+            Graph meshGraph = new Graph(mesh);
+
+            List<List<Vector2>> croppedCells = VoronoiMeshAdapter.CropCells(meshGraph, voronoi.Cells);
         }
 
         /// <summary>
@@ -340,7 +352,6 @@ namespace Assets
                 foreach (GraphTriangle triangle in node.Triangles)
                     cell.AddNode(triNodeDict[triangle]);
             }
-
 
             return dualGraph;
         }

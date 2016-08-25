@@ -136,7 +136,6 @@ namespace Assets
                     cell.AddNode(triNodeDict[triangle]);
             }
 
-
             return dualGraph;
         }
 
