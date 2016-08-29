@@ -66,6 +66,17 @@ namespace Graph2D
             Triangles.Remove(triangle);
         }
 
+        public GraphEdge GetEdge(GraphNode other)
+        {
+            foreach (GraphEdge edge in Edges)
+            {
+                if (edge.Contains(other))
+                    return edge;
+            }
+
+            return null;
+        }
+
         public bool HasEdge(GraphNode node)
         {
             // Check if ANY edge contains the given node

@@ -288,7 +288,7 @@ namespace Assets
             Mesh mesh = GetComponent<MeshFilter>().mesh;
             Graph meshGraph = new Graph(mesh);
 
-            List<List<Vector2>> croppedCells = VoronoiMeshAdapter.CropCells(meshGraph, voronoi.Cells);
+            //List<List<Vector2>> croppedCells = VoronoiMeshAdapter.CropCells(meshGraph, voronoi.Cells);
         }
 
         /// <summary>
