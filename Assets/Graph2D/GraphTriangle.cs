@@ -25,12 +25,10 @@ namespace Graph2D
         /// </summary>
         public Circle Circumcircle
         {
-            get
+            get     // Lazy initialisation of circumcircle
             {
-                // Lazy initialisation of circumcircle
                 if (circumcircle == null)
                     circumcircle = MathExtension.Circumcircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
-
                 return circumcircle;
             }
         }
@@ -49,6 +47,7 @@ namespace Graph2D
                 c.GetEdge(a)
             };
 
+            // Check that there are edges connecting all the nodes
             if (Edges.Contains(null))
                 throw new ArgumentException("Nodes are not connected and do not constitute a triangle");
         }
@@ -82,6 +81,7 @@ namespace Graph2D
         /// </summary>
         public bool Contains(GraphEdge edge)
         {
+            // Check each edge for the given edge
             foreach (GraphEdge myEdge in Edges)
             {
                 if (myEdge.Equals(edge))

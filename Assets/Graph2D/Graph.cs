@@ -58,6 +58,47 @@ namespace Graph2D
         }
 
         /// <summary>
+        /// Creates a mesh by converting this graphs nodes to verts and triangles to mesh triangles. Returns null if this graph is empty
+        /// </summary>
+        public Mesh ToMesh()
+        {
+            // If graph is empty, do not return a mesh, return null
+            if (Nodes.Count == 0 || Edges.Count == 0 || Triangles.Count == 0)
+                return null;
+
+            Mesh mesh = new Mesh();
+
+            // Create dictionary of node, index pairs
+            Dictionary<GraphNode, int> nodeIndexDict = new Dictionary<GraphNode, int>();
+            List<Vector3> vertices = new List<Vector3>();
+
+            // Add vert for each node in graph
+            for (int i = 0; i < Nodes.Count; i++)
+            {
+                nodeIndexDict.Add(Nodes[i], i);
+                vertices.Add(Nodes[i].Vector);
+            }
+
+            // Set mesh verts
+            mesh.SetVertices(vertices);
+
+            // create list to hold tris
+            List<int> triIndices = new List<int>();
+
+            // foreach tri, get its node indicies from dict, add nodes to list of tris
+            foreach (GraphTriangle triangle in Triangles)
+            {
+                foreach (GraphNode node in triangle.Nodes)
+                    triIndices.Add(nodeIndexDict[node]);
+            }
+
+            // convert list to array, give to mesh
+            mesh.SetTriangles(triIndices, 0);
+
+            return mesh;
+        }
+
+        /// <summary>
         /// Create and add a node that stores the given vector
         /// </summary>
         public virtual GraphNode CreateNode(Vector2 vector)
@@ -178,6 +219,9 @@ namespace Graph2D
                 edge.RemoveTriangle(triangle);
         }
 
+        /// <summary>
+        /// Sets the order of nodes in this graphs collection of nodes according to the order of the indices in the given list
+        /// </summary>
         public void SetNodeOrder(List<int> indices)
         {
             // Throw error if order of entire list is not defined
@@ -189,6 +233,9 @@ namespace Graph2D
                 Nodes.Swap(i, indices[i]);
         }
 
+        /// <summary>
+        /// Sets the order of edges in this graphs collection of edges according to the order of the indices in the given list
+        /// </summary>
         public void SetEdgeOrder(List<int> indices)
         {
             // Throw error if order of entire list is not defined
@@ -200,6 +247,10 @@ namespace Graph2D
                 Edges.Swap(i, indices[i]);
         }
 
+        /// <summary>
+        /// Dissects the graph according to the given clip edge. Parts of the graph that lie outside the edge are removed. Nodes, edges, and 
+        /// triangles are created / defined at the intersection of the graph and clipping edge.
+        /// </summary>
         public void Clip(GraphEdge clipEdge)
         {
             // Dict that associates edges with their new, clipped version

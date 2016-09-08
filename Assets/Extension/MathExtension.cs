@@ -10,6 +10,30 @@ namespace UnityEngine
     /// </summary>
     public static class MathExtension
     {
+        public static Circle BoundingCircle(Vector2[] vectors)
+        {
+            // Calculate average of vectors
+            Vector2 sum = Vector2.zero;
+            foreach (Vector2 vector in vectors)
+                sum += vector;
+
+            // Centre of given vectors is their average
+            Vector2 centre = sum / vectors.Length;
+
+            // Calculate distance from centre to furthest vector
+            float greatestDistance = 0;
+            foreach (Vector2 vector in vectors)
+            {
+                // If distance to vector is larger, it is the new greatest distance
+                float distance = Vector2.Distance(vector, centre);
+                if (distance > greatestDistance)
+                    greatestDistance = distance;
+            }
+
+            // Convert to circle
+            return new Circle(centre.x, centre.y, greatestDistance);
+        }
+
         public static Vector2 PolygonCentre(List<Vector2> polygonPoints)
         {
             float signedArea = PolygonSignedArea(polygonPoints);

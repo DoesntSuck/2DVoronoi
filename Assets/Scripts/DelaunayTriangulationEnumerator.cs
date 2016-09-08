@@ -46,7 +46,7 @@ namespace Assets
         public Color VoronoiColor = Color.red;
 
         Graph delaunay;
-        VoronoiGraph voronoi;
+        //VoronoiGraph voronoi;
         GraphNode[] superTriangleNodes;
         HashSet<GraphEdge> insideEdges;
         HashSet<GraphEdge> outsideEdges;
@@ -141,9 +141,9 @@ namespace Assets
                 DrawNodes(delaunay.Nodes, NodeColor, 0.01f);
             }
 
-            // Draw voronoi graph
-            if (voronoi != null)
-                DrawEdges(voronoi.Edges, VoronoiColor);
+            //// Draw voronoi graph
+            //if (voronoi != null)
+            //    DrawEdges(voronoi.Edges, VoronoiColor);
         }
 
         private void DrawNodes(IEnumerable<GraphNode> nodes, Color color, float radius)
@@ -275,18 +275,18 @@ namespace Assets
 
             yield return StartCoroutine(WaitForKeyInput(KeyCode.Space));
 
-            // Generate voronoi graph
-            voronoi = CircumcircleDualGraph();
+            //// Generate voronoi graph
+            //voronoi = CircumcircleDualGraph();
 
-            yield return StartCoroutine(WaitForKeyInput(KeyCode.Space));
+            //yield return StartCoroutine(WaitForKeyInput(KeyCode.Space));
 
-            // Get mesh
-            Mesh mesh = GetComponent<MeshFilter>().mesh;
+            //// Get mesh
+            //Mesh mesh = GetComponent<MeshFilter>().mesh;
 
-            // Break into chunks based on voronoi cells
-            List<Graph> chunks = VoronoiMeshAdapter.CropMesh(mesh, voronoi.Cells);
+            //// Break into chunks based on voronoi cells
+            //List<Graph> chunks = VoronoiMeshAdapter.CropMesh(mesh, voronoi.Cells);
 
-            GetComponent<MeshFilter>().mesh = GraphUtility.MeshFromGraph(chunks[0]);
+            //GetComponent<MeshFilter>().mesh = GraphUtility.MeshFromGraph(chunks[0]);
         }
 
         /*
