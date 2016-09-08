@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Graph2D
@@ -41,26 +42,15 @@ namespace Graph2D
         public GraphTriangle(GraphNode a, GraphNode b, GraphNode c)
         {
             Nodes = new GraphNode[] { a, b, c };
-            Edges = new GraphEdge[Nodes.Length];
-
-            // Find edges that connect nodes
-            int edgeIndex = 0;
-            for (int i = 0; i < Nodes.Length - 1; i++)
+            Edges = new GraphEdge[] 
             {
-                for (int j = i + 1; j < Nodes.Length; j++)
-                {
-                    // Add edge, connecting node i and j, to array
-                    foreach (GraphEdge edge in Nodes[i].Edges.Where(e => e.Contains(Nodes[j])))
-                        Edges[edgeIndex++] = edge;  // Index is incremented AFTER edge is added
-                }
-            }
+                a.GetEdge(b),
+                b.GetEdge(c),
+                c.GetEdge(a)
+            };
 
-            // Check that the given nodes connect to form a triangle
-            foreach (GraphEdge edge in Edges)
-            {
-                if (edge == null)
-                    throw new ArgumentException("Nodes are not connected and do not constitute a triangle");
-            }
+            if (Edges.Contains(null))
+                throw new ArgumentException("Nodes are not connected and do not constitute a triangle");
         }
 
         /// <summary>
@@ -71,14 +61,19 @@ namespace Graph2D
             return Nodes.Contains(node);
         }
 
+        /// <summary>
+        /// Checks if this triangle contains ANY of the given nodes
+        /// </summary>
         public bool ContainsAny(params GraphNode[] nodes)
         {
+            // Check each node
             foreach (GraphNode node in nodes)
             {
                 if (Contains(node))
                     return true;
             }
 
+            // None of the nodes were used by this triangle
             return false;
         }
 
@@ -94,6 +89,40 @@ namespace Graph2D
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Checks whether this triangle and the given triangle share an edge
+        /// </summary>
+        public bool SharesEdge(GraphTriangle other)
+        {
+            // Compare each edge
+            foreach (GraphEdge edge in Edges)
+            {
+                // Check if triangles share edge
+                if (other.Contains(edge))
+                    return true;
+            }
+
+            // No edges were shared
+            return false;
+        }
+
+        /// <summary>
+        /// Returns a list of indices of the nodes in this triangle that are 'inside' the given edge.
+        /// </summary>
+        public List<int> InsideNodeIndices(GraphEdge clipEdge)
+        {
+            // List to store the indices of tri-nodes that are inside the clip edge
+            List<int> insideIndices = new List<int>();
+            for (int i = 0; i < Nodes.Length; i++)
+            {
+                // If node is inside, add its index to the list
+                if (MathExtension.Side(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, Nodes[i].Vector) <= 0)
+                    insideIndices.Add(i);
+            }
+
+            return insideIndices;
         }
     }
 }

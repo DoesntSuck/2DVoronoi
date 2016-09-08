@@ -9,7 +9,7 @@ namespace Graph2D
     /// </summary>
     public class GraphNode
     {
-        /// <summary>
+         /// <summary>
         /// This nodes vector data
         /// </summary>
         public Vector2 Vector { get; private set; }
@@ -17,7 +17,7 @@ namespace Graph2D
         /// <summary>
         /// Set of all edges of which this node is a consituent
         /// </summary>
-        public HashSet<GraphEdge> Edges { get; private set; }
+        public List<GraphEdge> Edges { get; private set; }
 
         /// <summary>
         /// et of all triangles of which this node is a consituent
@@ -30,7 +30,7 @@ namespace Graph2D
         public GraphNode(Vector2 vector)
         {
             Vector = vector;
-            Edges = new HashSet<GraphEdge>();
+            Edges = new List<GraphEdge>();
             Triangles = new HashSet<GraphTriangle>();
         }
 

@@ -1,177 +1,156 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Graph2D;
-using UnityEngine;
+﻿//using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Text;
+//using Graph2D;
+//using UnityEngine;
 
-namespace Assets
-{
-    public class VoronoiCell
-    {
-        public Vector2 Nuclei { get; private set; }
-        public List<GraphNode> Nodes { get; private set; }
-        public List<GraphEdge> Edges { get; private set; }
+//namespace Assets
+//{
+//    public class VoronoiCell
+//    {
+//        /// <summary>
+//        /// The voronoi nuclei: every point in the voronoi cell is closer to this nuclei than any other cells nuclei
+//        /// </summary>
+//        public Vector2 Nuclei { get; private set; }
 
-        public Vector2 Centre
-        {
-            get
-            {
-                if (centreNode == null)
-                {
-                    // Convert from list of nodes to list of vectors
-                    List<Vector2> polygonPoints = GetAdjacentNodeEnumerator().Select(n => n.Vector).ToList();
+//        public Graph Graph { get; private set; }
 
-                    // Calculate centre of cell polygon
-                    Vector2 centre = MathExtension.PolygonCentre(polygonPoints);
+//        // Lazy initialized polygonal centre
+//        public Vector2 Centre
+//        {
+//            get
+//            {
+//                if (polygonCentreCalculated == false)
+//                {
+//                    // Convert from list of nodes to list of vectors
+//                    List<Vector2> polygonPoints = Graph.Nodes.Select(n => n.Vector).ToList();
 
-                    centreNode = new GraphNode(centre);
-                }
+//                    // Calculate centre of cell polygon
+//                    polygonCentre = MathExtension.PolygonCentre(polygonPoints);
+//                    polygonCentreCalculated = true;
+//                }
 
-                return centreNode.Vector;
-            }
-        }
-        private GraphNode centreNode;
+//                return polygonCentre;
+//            }
+//        }
+//        private Vector2 polygonCentre;          // The centre of the voronoi cell polygon
+//        private bool polygonCentreCalculated;   // Whether the polygonCentre vector is currently accurate
 
-        public VoronoiCell(Vector2 nuclei)
-        {
-            Nuclei = nuclei;
-            Nodes = new List<GraphNode>();
-            Edges = new List<GraphEdge>();
-        }
+//        /// <summary>
+//        /// A new voronoi cell with the given nuclei:  every point in the voronoi cell is closer to this nuclei than any other cells nuclei
+//        /// </summary>
+//        public VoronoiCell(Vector2 nuclei)
+//        {
+//            Nuclei = nuclei;
+//        }
 
-        public void AddNode(GraphNode node)
-        {
-            Nodes.Add(node);
+//        public GraphNode AddNode(Vector2 vector)
+//        {
+//            return Graph.CreateNode(vector);
+//        }
 
-            // Check for edges bordering this cell
-            foreach (GraphEdge edge in node.Edges)
-            {
-                // If cell already knows about this edges' other node, add the edge to cells border edges
-                if (Nodes.Contains(edge.GetOther(node)))
-                    Edges.Add(edge);
-            }
-        }
+//        public GraphEdge AddEdge(GraphNode node1, GraphNode node2)
+//        {
+//            GraphEdge edge = Graph.CreateEdge(node1, node2);
 
-        public void Remove(GraphNode node)
-        {
-            // Remove node ref
-            Nodes.Remove(node);
+//            // Check if voronoi cell is complete
 
-            // Remove refs to node's edges
-            foreach (GraphEdge edge in node.Edges)
-                Edges.Remove(edge);
-        }
+//            return Graph.CreateEdge(node1, node2);
+//        }
 
-        public bool Contains(GraphNode node)
-        {
-            return Nodes.Contains(node);
-        }
+//        public bool IsComplete()
+//        {
+//            bool twoEdgesPerNode = Graph.Nodes.Where(n => n.Edges.Count == 2).Count() == Graph.Nodes.Count;
 
-        public bool Contains(GraphEdge edge)
-        {
-            return Edges.Contains(edge);
-        }
+//            bool noDuplicateEdges = Graph.Edges.
 
-        /// <summary>
-        /// Orders the nodes and edges in this cell in a clockwise order, relative to cell centre, starting at the current first node in list
-        /// </summary>
-        public void OrderByClockwise()
-        {
-            // Order nodes clockwise around polygon centre
-            Nodes = GetAdjacentNodeEnumerator(true).ToList();
+//            foreach (GraphNode node in Graph.Nodes)
+//            {
+//                if (node.Edges.Count != 2)
+//                    return false;   
+//            }
 
-            // Order edges
-            List<GraphEdge> orderedEdges = new List<GraphEdge>(Edges.Count);
-            for (int i = 0; i < Nodes.Count; i++)
-            {
-                // Find edge that connects this node to next clockwise node
-                foreach (GraphEdge edge in Edges)
-                {
-                    if (edge.Contains(Nodes[i], Nodes[(i + 1) % Nodes.Count]))
-                    {
-                        // Edge is found, stop looking
-                        orderedEdges.Add(edge);
-                        break;
-                    }
-                }
-            }
-        }
+//            return true;
+//        }
 
-        public IEnumerable<GraphNode> GetAdjacentNodeEnumerator(bool clockwise = false)
-        {
-            HashSet<GraphNode> visitedNodes = new HashSet<GraphNode>();
 
-            // Start with first node in list
-            GraphNode walker = Nodes[0];
 
-            if (clockwise)
-            {
-                visitedNodes.Add(walker);       // Remember we have visited this node
-                yield return walker;            // Return current node
+//        /// <summary>
+//        /// Orders the nodes and edges in this cell in a clockwise order, relative to cell centre, starting at the current first node in list
+//        /// </summary>
+//        public void OrderByClockwise()
+//        {
+//            // Order nodes clockwise around polygon centre
+//            Nodes = GetAdjacentNodeEnumerator(true).ToList();
 
-                // Get next node in clockwise direction
-                walker = GetNextClockwiseNode(walker);
-            }
+//            // Order edges
+//            List<GraphEdge> orderedEdges = new List<GraphEdge>(Edges.Count);
+//            for (int i = 0; i < Nodes.Count; i++)
+//            {
+//                // Find edge that connects this node to next clockwise node
+//                foreach (GraphEdge edge in Edges)
+//                {
+//                    if (edge.Contains(Nodes[i]) && edge.Contains(Nodes[(i + 1) % Nodes.Count]))
+//                    {
+//                        // Edge is found, stop looking
+//                        orderedEdges.Add(edge);
+//                        break;
+//                    }
+//                }
+//            }
+//        }
 
-            // While not all of the nodes have been visited
-            while (visitedNodes.Count < Nodes.Count)
-            {
-                visitedNodes.Add(walker);       // Remember we have visited this node
-                yield return walker;            // Return current node
+//        private IEnumerable<GraphNode> GetAdjacentNodeEnumerator(bool clockwise = false)
+//        {
+//            HashSet<GraphNode> visitedNodes = new HashSet<GraphNode>();
 
-                // Find next adjacent node
-                foreach (GraphEdge edge in Edges)
-                {
-                    if (edge.Contains(walker) && !visitedNodes.Contains(edge.GetOther(walker)))
-                        walker = edge.GetOther(walker);
-                }
-            }
-        }
+//            // Start with first node in list
+//            GraphNode walker = Nodes[0];
 
-        public GraphNode GetNextClockwiseNode(GraphNode node)
-        {
-            foreach (GraphEdge edge in Edges)
-            {
-                // Find adjacent edge, check its other node to see if it is clockwise
-                if (edge.Contains(node))
-                {
-                    GraphNode adjacentNode = edge.GetOther(node);
+//            if (clockwise)
+//            {
+//                visitedNodes.Add(walker);       // Remember we have visited this node
+//                yield return walker;            // Return current node
 
-                    // Check which side the node is on
-                    float side = MathExtension.Side(node.Vector, Centre, adjacentNode.Vector);
+//                // Get next node in clockwise direction
+//                walker = GetNextClockwiseNode(walker);
+//            }
 
-                    // If node is clockwise, return it
-                    if (side <= 0)
-                        return adjacentNode;
-                }
-            }
+//            // While not all of the nodes have been visited
+//            while (visitedNodes.Count < Nodes.Count)
+//            {
+//                visitedNodes.Add(walker);       // Remember we have visited this node
+//                yield return walker;            // Return current node
 
-            return null;
-        }
+//                // Find next adjacent node
+//                foreach (GraphEdge edge in Edges)
+//                {
+//                    if (edge.Contains(walker) && !visitedNodes.Contains(edge.GetOther(walker)))
+//                        walker = edge.GetOther(walker);
+//                }
+//            }
+//        }
 
-        // Return points where the segment enters and leaves the polygon.
-        public List<GraphEdge> LineEdgeIntersections(Vector2 segmentPoint1, Vector2 segmentPoint2, out List<Vector2> intersectionPoints)
-        {
-            // Make lists to hold points of intersection
-            List<GraphEdge> intersectedEdges = new List<GraphEdge>();
-            intersectionPoints = new List<Vector2>();
+//        private GraphNode GetNextClockwiseNode(GraphNode node)
+//        {
+//            foreach (GraphEdge edge in Edges)
+//            {
+//                // Find adjacent edge, check its other node to see if it is clockwise
+//                if (edge.Contains(node))
+//                {
+//                    GraphNode adjacentNode = edge.GetOther(node);
 
-            // Check for intersection between the segment and each edge in this cell
-            foreach (GraphEdge edge in Edges)
-            {
-                // See where the edge intersects the segment.
-                Vector2d intersection = new Vector2d();
-                if (Mathd.LineSegmentIntersection(segmentPoint1, segmentPoint2, edge.Nodes[0].Vector, edge.Nodes[1].Vector, ref intersection))
-                {
-                    // Add edge and the intersection point to lists
-                    intersectedEdges.Add(edge);
-                    intersectionPoints.Add(new Vector2((float)intersection.x, (float)intersection.y));
-                }
-            }   
+//                    // Check which side the node is on
+//                    float side = MathExtension.Side(node.Vector, Centre, adjacentNode.Vector);
 
-            // Return the intersected edges
-            return intersectedEdges;
-        }
-    }
-}
+//                    // If node is clockwise, return it
+//                    if (side <= 0)
+//                        return adjacentNode;
+//                }
+//            }
+
+//            return null;
+//        }
+//    }
+//}

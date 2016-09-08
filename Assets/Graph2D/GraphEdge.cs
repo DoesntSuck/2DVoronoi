@@ -20,23 +20,6 @@ namespace Graph2D
         public HashSet<GraphTriangle> Triangles { get; private set; }
 
         /// <summary>
-        /// Iterates through all edges that this edges' nodes are connected to
-        /// </summary>
-        public IEnumerable<GraphEdge> Edges
-        {
-            get
-            {
-                // Do for both nodes
-                foreach (GraphNode node in Nodes)
-                {
-                    // Iterate through each nodes collection of edges (excluding this node)
-                    foreach (GraphEdge edge in node.Edges.Where(e => e != this))
-                        yield return edge;      // return each edge
-                }
-            }
-        }
-
-        /// <summary>
         /// An edge connecting the given nodes
         /// </summary>
         public GraphEdge(GraphNode node1, GraphNode node2)
@@ -76,14 +59,6 @@ namespace Graph2D
 
             // Nethier of the pair of nodes are the given node
             return false;
-        }
-
-        /// <summary>
-        /// Checks if the given nods are the same as this edge's pair of nodes
-        /// </summary>
-        public bool Contains(GraphNode a, GraphNode b)
-        {
-            return Contains(a) && Contains(b);
         }
 
         /// <summary>

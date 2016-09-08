@@ -22,9 +22,6 @@ namespace Assets
         private void Break(Vector2 impactPoint, int nChunks, float fractureDistance)
         {
 
-
-            // Create triangulation
-            DelaunayTriangulation triangulation = new DelaunayTriangulation(impactPoint, fractureDistance);
         }
     }
 }

@@ -113,24 +113,6 @@ namespace UnityEngine
                 return max - Mathf.Sqrt((1 - unifrom) * (max - min) * (max - mid));
         }
 
-        /// <summary>
-        /// Checks if the convex polygon defined by the points 'polyPoints' contains the given vector
-        /// </summary>
-        public static bool Poly2DContainsPoint(List<Vector2> polyPoints, Vector2 vector)
-        {
-            int j = polyPoints.Count - 1;
-            bool inside = false;
-
-            for (int i = 0; i < polyPoints.Count; j = i++)
-            {
-                if (((polyPoints[i].y <= vector.y && vector.y < polyPoints[j].y) || (polyPoints[j].y <= vector.y && vector.y < polyPoints[i].y)) &&
-                    (vector.x < (polyPoints[j].x - polyPoints[i].x) * (vector.y - polyPoints[i].y) / (polyPoints[j].y - polyPoints[i].y) + polyPoints[i].x))
-                    inside = !inside;
-            }
-
-            return inside;
-        }
-
         public static bool AnyWithinDistance(this Vector2 vector, IEnumerable<Vector2> others, float distance)
         {
             return others.Where(v => Vector2.Distance(vector, v) <= distance).Any();

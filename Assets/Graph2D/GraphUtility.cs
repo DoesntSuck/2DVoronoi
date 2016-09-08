@@ -13,7 +13,7 @@ namespace Graph2D
 
             // Add each vert as a node to graph
             foreach (Vector3 vert in mesh.vertices)
-                graph.AddNode(vert);
+                graph.CreateNode(vert);
 
             // Create triangle using mesh tri indices as node indices
             for (int i = 0; i < mesh.triangles.Length - 2; i += 3)
@@ -22,11 +22,11 @@ namespace Graph2D
                 GraphNode b = graph.Nodes[mesh.triangles[i + 1]];
                 GraphNode c = graph.Nodes[mesh.triangles[i + 2]];
 
-                GraphEdge ab = graph.AddEdge(a, b);
-                GraphEdge ac = graph.AddEdge(a, c);
-                GraphEdge bc = graph.AddEdge(b, c);
+                GraphEdge ab = graph.CreateEdge(a, b);
+                GraphEdge ac = graph.CreateEdge(a, c);
+                GraphEdge bc = graph.CreateEdge(b, c);
 
-                graph.AddTriangle(a, b, c);
+                graph.DefineTriangle(a, b, c);
             }
 
             return graph;
@@ -71,18 +71,18 @@ namespace Graph2D
             // Add super triangle: triangle large enough to encompass all insertion vectors
             GraphNode[] superTriangleNodes = new GraphNode[]
             {
-                graph.AddNode(new Vector2(origin.x,            origin.y + distance)),
-                graph.AddNode(new Vector2(origin.x - distance, origin.y - distance)),
-                graph.AddNode(new Vector2(origin.x + distance, origin.y - distance)),
+                graph.CreateNode(new Vector2(origin.x,            origin.y + distance)),
+                graph.CreateNode(new Vector2(origin.x - distance, origin.y - distance)),
+                graph.CreateNode(new Vector2(origin.x + distance, origin.y - distance)),
             };
 
             // Add edges
-            graph.AddEdge(superTriangleNodes[0], superTriangleNodes[1]);
-            graph.AddEdge(superTriangleNodes[0], superTriangleNodes[2]);
-            graph.AddEdge(superTriangleNodes[1], superTriangleNodes[2]);
+            graph.CreateEdge(superTriangleNodes[0], superTriangleNodes[1]);
+            graph.CreateEdge(superTriangleNodes[0], superTriangleNodes[2]);
+            graph.CreateEdge(superTriangleNodes[1], superTriangleNodes[2]);
 
             // Add triangle
-            graph.AddTriangle(superTriangleNodes[0], superTriangleNodes[1], superTriangleNodes[2]);
+            graph.DefineTriangle(superTriangleNodes[0], superTriangleNodes[1], superTriangleNodes[2]);
 
             return superTriangleNodes;
         }
