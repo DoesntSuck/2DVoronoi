@@ -248,10 +248,10 @@ namespace Graph2D
         }
 
         /// <summary>
-        /// Dissects the graph according to the given clip edge. Parts of the graph that lie outside the edge are removed. Nodes, edges, and 
-        /// triangles are created / defined at the intersection of the graph and clipping edge.
+        /// Crops the graph according to the given clip edge. Parts of the graph that lie outside the edge are removed. Edges and triangles extending past the clip edge
+        /// are truncated at their intersection with the clipping edge.
         /// </summary>
-        public void Clip(GraphEdge clipEdge)
+        public void Clip(GraphEdge clipEdge, float inside)
         {
             // Dict that associates edges with their new, clipped version
             Dictionary<GraphEdge, GraphEdge> oldNewEdgeDict = new Dictionary<GraphEdge, GraphEdge>();
@@ -260,7 +260,7 @@ namespace Graph2D
             foreach (GraphTriangle subjectTriangle in trianglesCopy)
             {
                 // Get the indices of all triangle nodes that are 'inside' the given edge
-                List<int> insideIndices = subjectTriangle.InsideNodeIndices(clipEdge);
+                List<int> insideIndices = subjectTriangle.SameSideNodeIndices(clipEdge, inside);
 
                 //    /\
                 //   /  \   triangle      ↑

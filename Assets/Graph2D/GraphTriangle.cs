@@ -111,14 +111,16 @@ namespace Graph2D
         /// <summary>
         /// Returns a list of indices of the nodes in this triangle that are 'inside' the given edge.
         /// </summary>
-        public List<int> InsideNodeIndices(GraphEdge clipEdge)
+        public List<int> SameSideNodeIndices(GraphEdge clipEdge, float side)
         {
             // List to store the indices of tri-nodes that are inside the clip edge
             List<int> insideIndices = new List<int>();
             for (int i = 0; i < Nodes.Length; i++)
             {
-                // If node is inside, add its index to the list
-                if (MathExtension.Side(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, Nodes[i].Vector) <= 0)
+                float nodeSide = MathExtension.Side(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, Nodes[i].Vector);
+
+                // If this node is on the same side OR on the line
+                if (nodeSide == side || nodeSide == 0)
                     insideIndices.Add(i);
             }
 

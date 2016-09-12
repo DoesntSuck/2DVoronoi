@@ -10,6 +10,20 @@ namespace UnityEngine
     /// </summary>
     public static class MathExtension
     {
+
+        public static bool ContainsPoint(Vector2[] polyPoints, Vector2 p)
+        { 
+           int j = polyPoints.Length - 1;
+                bool inside = false; 
+           for (int i = 0; i<polyPoints.Length; j = i++) { 
+              if ( ((polyPoints[i].y <= p.y && p.y<polyPoints[j].y) || (polyPoints[j].y <= p.y && p.y<polyPoints[i].y)) && 
+                 (p.x< (polyPoints[j].x - polyPoints[i].x) * (p.y - polyPoints[i].y) / (polyPoints[j].y - polyPoints[i].y) + polyPoints[i].x)) 
+                 inside = !inside; 
+           } 
+           return inside; 
+        }
+
+
         private static float Sign(Vector2 p1, Vector2 p2, Vector2 p3)
         {
             return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
@@ -84,7 +98,7 @@ namespace UnityEngine
 
         /// <summary>
         /// Calculates the area of the polygon described by the given points. The given points do NOT need to be in clockwise order but each adjacent point in the list
-        /// must for an edge on the polygon
+        /// must form an edge on the polygon
         /// </summary>
         public static float PolygonSignedArea(List<Vector2> polygonPoints)
         {

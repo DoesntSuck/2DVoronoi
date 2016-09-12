@@ -7,16 +7,16 @@ using UnityEngine;
 
 namespace Assets
 {
-    [CustomEditor(typeof(DelaunayTest))]
+    [CustomEditor(typeof(SceneViewMouseMoveListener))]
     public class SceneViewMouseListener : Editor
     {
-        DelaunayTest delaunayTest;
+        SceneViewMouseMoveListener listener;
 
         void OnEnable()
         {
             // Get the selected Delaunay Test script
             if (Selection.activeGameObject != null)
-                delaunayTest = Selection.activeGameObject.GetComponent<DelaunayTest>();
+                listener = Selection.activeGameObject.GetComponent<SceneViewMouseMoveListener>();
         }
 
         void OnSceneGUI()
@@ -26,7 +26,7 @@ namespace Assets
             Ray worldSpaceRay = HandleUtility.GUIPointToWorldRay(mouseGUIPosition);
 
             // Pass ray to delaunay test
-            delaunayTest.MouseMoved(worldSpaceRay);
+            listener.MouseMoved(worldSpaceRay);
         }
     }
 }

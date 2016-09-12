@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Linq;
 using System.Collections.Generic;
 using Graph2D;
 
@@ -34,9 +35,19 @@ public class Breakable : MonoBehaviour
             // Create graph that mirrors mesh
             Graph meshGraph = new Graph(mesh);
 
-            foreach (GraphEdge clipEdge in cell.Edges)
-                meshGraph.Clip(clipEdge);
+            // Calculate polygonal centre of convex mesh
+            Vector2 polygonalCentre = MathExtension.PolygonCentre(cell.Nodes.Select(n => n.Vector).ToList());
 
+            // Clip once per graph edge
+            foreach (GraphEdge clipEdge in cell.Edges)
+            {
+                // Which side of edge is counted as being inside?
+                float inside = MathExtension.Side(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, polygonalCentre);
+
+                // Clip edges that aren't inside of line
+                meshGraph.Clip(clipEdge, inside);
+            }
+                
             // Convert graph to mesh again
             Mesh croppedMesh = meshGraph.ToMesh();
             if (croppedMesh != null)                // If mesh is not completely cropped
