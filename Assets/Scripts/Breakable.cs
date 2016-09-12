@@ -5,6 +5,8 @@ using Graph2D;
 [RequireComponent(typeof(MeshFilter))]
 public class Breakable : MonoBehaviour
 {
+    // TODO: DONT NEED TO ORDER VORONOI CELL NODES AND EDGES CLOCKWISE -> just text that another node is on the SAME side as the polygonal centre when doing clipping
+
     void OnMouseDown()
     {
         // Mouse position to ray

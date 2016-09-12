@@ -49,9 +49,9 @@ namespace Graph2D
                 GraphNode b = Nodes[mesh.triangles[i + 1]];
                 GraphNode c = Nodes[mesh.triangles[i + 2]];
 
-                GraphEdge ab = CreateEdge(a, b);
-                GraphEdge ac = CreateEdge(a, c);
-                GraphEdge bc = CreateEdge(b, c);
+                CreateEdge(a, b);
+                CreateEdge(a, c);
+                CreateEdge(b, c);
 
                 DefineTriangle(a, b, c);
             }
@@ -367,7 +367,7 @@ namespace Graph2D
                     }
 
                     // Add an edge between intersection nodes, creates a four sided polygon
-                    GraphEdge intersectionEdge = CreateEdge(intersectionNodes[0], intersectionNodes[1]);
+                    CreateEdge(intersectionNodes[0], intersectionNodes[1]);
 
                     // Create an edge that divides the polygon into two triangles
                     GraphEdge bisectingEdge;
