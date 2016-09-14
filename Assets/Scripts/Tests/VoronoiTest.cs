@@ -7,6 +7,9 @@ namespace Assets
 {
     public class VoronoiTest : MonoBehaviour, SceneViewMouseMoveListener
     {
+        public bool RemoveSuperTriangle = false;
+        public Color Colour = Color.cyan;
+
         private List<Transform> children;
         private List<Graph> cells;
 
@@ -56,32 +59,35 @@ namespace Assets
         {
             // Create Voronoi cells from child transform positions as nuclei
             Vector2[] nuclei = children.Select(c => (Vector2)c.position).ToArray();
-            cells = VoronoiTessellation.Create(nuclei);
+            cells = VoronoiTessellation.Create(nuclei, RemoveSuperTriangle);
         }
 
         void OnDrawGizmos()
         {
-            IEnumerable<Transform> children = GetComponentsInChildren<Transform>()     // Get all child transforms
-                .Where(c => c != transform);                                           // Except THIS transform
-
-            IEnumerable<Vector3> nuclei = children.Select(c => c.position);
-
-            // Draw each nuclei
-            GraphDebug.DrawVectors(nuclei, Color.white, 0.025f);
-
-            if (cells != null)
+            if (enabled)
             {
-                GraphDebug.EdgeColour = Color.white;
+                IEnumerable<Transform> children = GetComponentsInChildren<Transform>()     // Get all child transforms
+                    .Where(c => c != transform);                                           // Except THIS transform
 
-                foreach (Graph cell in cells)
-                    GraphDebug.DrawEdges(cell.Edges);
+                IEnumerable<Vector3> nuclei = children.Select(c => c.position);
 
-                if (hoveredCells != null)
+                // Draw each nuclei
+                GraphDebug.DrawVectors(nuclei);
+
+                if (cells != null)
                 {
-                    GraphDebug.EdgeColour = Color.magenta;
+                    GraphDebug.EdgeColour = Colour;
 
                     foreach (Graph cell in cells)
                         GraphDebug.DrawEdges(cell.Edges);
+
+                    if (hoveredCells != null)
+                    {
+                        GraphDebug.EdgeColour = Color.magenta;
+
+                        foreach (Graph cell in cells)
+                            GraphDebug.DrawEdges(cell.Edges);
+                    }
                 }
             }
         }

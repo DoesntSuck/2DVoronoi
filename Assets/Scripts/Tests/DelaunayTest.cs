@@ -8,6 +8,8 @@ namespace Assets
     [RequireComponent(typeof(PolygonCollider2D))]
     public class DelaunayTest : MonoBehaviour, SceneViewMouseMoveListener
     {
+        public bool RemoveSuperTriangle = false;
+
         [Tooltip("Whether or not to draw each triangles circumcircle")]
         public bool Circumcircles;
 
@@ -31,38 +33,47 @@ namespace Assets
 
             // Create super triangle graph so can use super triangle nodes for polygon collider
             triangulation = DelaunayTriangulation.CreateSuperTriangleGraph(vectors);
-            Vector2[] superTriangle = triangulation.Nodes.Select(n => n.Vector).ToArray();
+            GraphNode[] superTriangle = triangulation.Nodes.ToArray();
 
             // Set collider points to the super triangle vectors
-            GetComponent<PolygonCollider2D>().points = superTriangle;
+            GetComponent<PolygonCollider2D>().points = superTriangle.Select(n => n.Vector).ToArray();
 
             // Insert vectors into triangulation
             DelaunayTriangulation.Insert(triangulation, vectors);
+
+            if (RemoveSuperTriangle)
+            {
+                foreach (GraphNode node in superTriangle)
+                    triangulation.Destroy(node);
+            }
         }
 
         void OnDrawGizmos()
         {
-            // Get children that aren't a super triangle OR this transform
-            children = GetComponentsInChildren<Transform>()
-                .Where(c => c != transform)             // Not THIS transform
-                .ToList();
-
-            // Draw a node for each transform
-            GraphDebug.DrawVectors(children.Select(c => c.position), Color.white, 0.025f);
-
-            // Draw the triangulation if it exists
-            if (triangulation != null)
+            if (enabled)
             {
-                GraphDebug.Circumcircles = Circumcircles;
-                GraphDebug.DrawGraph(triangulation);
+                // Get children that aren't a super triangle OR this transform
+                children = GetComponentsInChildren<Transform>()
+                    .Where(c => c != transform)             // Not THIS transform
+                    .ToList();
 
-                // Highlight the triangles that are moused over
-                if (hoveredTriangles != null)
+                // Draw a node for each transform
+                GraphDebug.DrawVectors(children.Select(c => c.position));
+
+                // Draw the triangulation if it exists
+                if (triangulation != null)
                 {
-                    foreach (GraphTriangle triangle in hoveredTriangles)
+                    GraphDebug.Circumcircles = Circumcircles;
+                    GraphDebug.DrawGraph(triangulation);
+
+                    // Highlight the triangles that are moused over
+                    if (hoveredTriangles != null)
                     {
-                        GraphDebug.DrawTriangle(triangle, Color.green);
-                        GraphDebug.DrawCircumcircle(triangle, Color.magenta);
+                        foreach (GraphTriangle triangle in hoveredTriangles)
+                        {
+                            GraphDebug.DrawTriangle(triangle, Color.green);
+                            GraphDebug.DrawCircumcircle(triangle, Color.magenta);
+                        }
                     }
                 }
             }

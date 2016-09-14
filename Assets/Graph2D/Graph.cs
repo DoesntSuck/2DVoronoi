@@ -375,12 +375,20 @@ namespace Graph2D
                         }
                     }
 
-                    //            .   /\
-                    //            _`./__\__ clip edge
-                    //              /`.  \
-                    // insideSide  /   `. \  intersectionSide
-                    //            /______`.\
-                    //                     `. bisecting edge
+                    //                  .   /\
+                    //                  _`./__\__ clip edge
+                    //                    /`.  \
+                    //     insideSide    /   `. \  intersectionSide
+                    //                  /______`.\
+                    //                           `. bisecting edge
+
+                    //                      /\   ,
+                    //                  ___/__\,'__ clip edge
+                    //                    /  ,'\
+                    // intersectionSide  / ,'   \  insideSide
+                    //                  /,'______\
+                    //                 ,'     
+                    // bisecting edge     
 
                     // Add an edge between intersection nodes, creates a four sided polygon
                     GraphEdge intersectionEdge = CreateEdge(intersectionNodes[0], intersectionNodes[1]);

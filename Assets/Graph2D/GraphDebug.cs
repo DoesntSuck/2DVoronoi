@@ -9,7 +9,7 @@ namespace Graph2D
     public static class GraphDebug
     {
         public static Color NodeColour = Color.white;
-        public static float NodeRadius = 0.025f;
+        public static float NodeRadius = 0.015f;
         public static Color TriangleColour = Color.white;
         public static Color EdgeColour = Color.red;
         public static Color CircumcircleColour = Color.yellow;
@@ -36,6 +36,13 @@ namespace Graph2D
 
             // Reset color to original
             Gizmos.color = original;
+        }
+
+        public static void DrawVectors(IEnumerable<Vector3> positions)
+        {
+            // Draw nodes
+            foreach (Vector3 position in positions)
+                DrawVector(position, NodeColour, NodeRadius);
         }
 
         public static void DrawVectors(IEnumerable<Vector3> positions, Color colour, float radius)

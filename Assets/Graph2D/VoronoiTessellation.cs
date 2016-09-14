@@ -14,10 +14,10 @@ namespace Graph2D
         /// Creates Voronoi cells with the given nuclei. Each nuclei corresponds to a single Voronoi cell. Each point inside a Voronoi cell is
         /// closer to its nuclei that any other cells nueclei.
         /// </summary>
-        public static List<Graph> Create(Vector2[] nuclei)
+        public static List<Graph> Create(Vector2[] nuclei, bool removeSuperTriangle = false)
         {
             // Create DelaunayTriangulation
-            Graph delaunayTriangulation = DelaunayTriangulation.Create(nuclei);
+            Graph delaunayTriangulation = DelaunayTriangulation.Create(nuclei, removeSuperTriangle);
 
             // Convert to Voronoi Cells
             List<Graph> cells = Create(delaunayTriangulation);
