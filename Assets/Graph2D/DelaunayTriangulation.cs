@@ -8,28 +8,22 @@ namespace Graph2D
 {
     public static class DelaunayTriangulation
     {
+        public static float SuperTriangleScaleFactor = 1.5f;
+
         /// <summary>
         /// Creates a Delaunay Triangulation from the given vectors. A super triangle 
         /// </summary>
-        public static Graph Create(Vector2[] vectors, Vector2[] superTriangle, bool removeSuperTriangle = false) // TODO: Change method signature (need to be able to mix and match optional arguments)
+        public static Graph Create(Vector2[] vectors, bool removeSuperTriangle = false)
         {
-            Graph triangulation = new Graph();
+            Graph triangulation = CreateSuperTriangleGraph(vectors);
 
             // Insert nodes at superTriangle vector positions
             GraphNode[] superTriangleNodes = new GraphNode[]
             {
-                triangulation.CreateNode(superTriangle[0]),
-                triangulation.CreateNode(superTriangle[1]),
-                triangulation.CreateNode(superTriangle[2])
+                triangulation.Nodes[0],
+                triangulation.Nodes[1],
+                triangulation.Nodes[2]
             };
-
-            // Add edges connecting nodes
-            triangulation.CreateEdge(superTriangleNodes[0], superTriangleNodes[1]);
-            triangulation.CreateEdge(superTriangleNodes[0], superTriangleNodes[2]);
-            triangulation.CreateEdge(superTriangleNodes[1], superTriangleNodes[2]);
-
-            // Convert edges to triangle
-            triangulation.DefineTriangle(superTriangleNodes[0], superTriangleNodes[1], superTriangleNodes[2]);
 
             // Insert each vector into the triangulation maintaining its Delaunay-ness
             foreach (Vector2 vector in vectors)
@@ -44,6 +38,13 @@ namespace Graph2D
             }
 
             return triangulation;
+        }
+
+        public static void Insert(Graph triangulation, IEnumerable<Vector2> vectors)
+        {
+            // Insert each vector
+            foreach (Vector2 vector in vectors)
+                Insert(triangulation, vector);
         }
 
         /// <summary>
@@ -79,20 +80,33 @@ namespace Graph2D
         /// Creates a new equilateral super triangle that encloses all of the given vectors. The distance from the triangles centre to each vertex is 3 times
         /// the radius of the triangles incircle.
         /// </summary>
-        public static Vector2[] CreateSuperTriangle(Vector2[] vectors)
+        public static Graph CreateSuperTriangleGraph(Vector2[] vectors)
         {
             // Circle that encloses all vectors
             Circle incircle = MathExtension.BoundingCircle(vectors);
 
-            // Create new equilateral super triangle
-            Vector2[] superTriangle = new Vector2[]
-            {
-                    new Vector2(incircle.Centre.x,                                (float)(incircle.Centre.y + incircle.Radius * 3)),    // Top-Centre
-                    new Vector2((float)(incircle.Centre.x - incircle.Radius * 3), (float)(incircle.Centre.y - incircle.Radius * 3)),    // Bottom-Left
-                    new Vector2((float)(incircle.Centre.x + incircle.Radius * 3), (float)(incircle.Centre.y - incircle.Radius * 3))     // Bottom-Right
-            };
+            // Direction from
+            Vector2 topCentreDir = Vector2.up;
+            Vector2 bottomLeftDir = Vector2.down + Vector2.left;
+            Vector2 bottomRightDir = Vector2.down + Vector2.right;
 
-            return superTriangle;
+            Vector2 topCentre = incircle.Centre + topCentreDir * ((float)incircle.Radius * 2) * SuperTriangleScaleFactor;
+            Vector2 bottomLeft = incircle.Centre + bottomLeftDir * ((float)incircle.Radius * 2) * SuperTriangleScaleFactor;
+            Vector2 bottomRight = incircle.Centre + bottomRightDir * ((float)incircle.Radius * 2) * SuperTriangleScaleFactor;
+
+            Graph graph = new Graph();
+
+            GraphNode a = graph.CreateNode(topCentre);
+            GraphNode b = graph.CreateNode(bottomLeft);
+            GraphNode c = graph.CreateNode(bottomRight);
+
+            GraphEdge ab = graph.CreateEdge(a, b);
+            GraphEdge ac = graph.CreateEdge(a, c);
+            GraphEdge bc = graph.CreateEdge(b, c);
+
+            graph.DefineTriangle(ab, ac, bc);
+
+            return graph;
         }
 
         #region Private Methods
@@ -111,7 +125,11 @@ namespace Graph2D
             {
                 foreach (GraphEdge edge in triangle.Edges)
                 {
-                    // If edge is in outside set, remove it and add it to inside set
+                    // Edge is 'inside' if it is shared by two triangles
+                    // Edge is 'outside' if only one triangle knows about it
+
+                    // If edge is in outside set (because another Triangle has already identified it), remove it and 
+                    // add it to inside set because this triangle is now identifying it
                     if (outsideEdges.Remove(edge))
                         insideEdges.Add(edge);
 

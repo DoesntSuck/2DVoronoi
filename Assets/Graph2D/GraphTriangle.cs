@@ -53,6 +53,19 @@ namespace Graph2D
         }
 
         /// <summary>
+        /// A triangle containing the three given nodes. Throws an error if the nodes are not connected by edges
+        /// </summary>
+        public GraphTriangle(GraphEdge a, GraphEdge b, GraphEdge c)
+        {
+            Edges = new GraphEdge[] { a, b, c };
+            Nodes = a.Nodes.Union(b.Nodes).Union(c.Nodes).ToArray();    // Get each unique node entry, convert to array
+
+            // Check that there are edges connecting all the nodes
+            if (Edges.Contains(null) || Nodes.Contains(null) || Nodes.Length != 3)
+                throw new ArgumentException("Nodes and edges do not constitute a triangle");
+        }
+
+        /// <summary>
         /// Checks if this triangle contains the given node
         /// </summary>
         public bool Contains(GraphNode node)

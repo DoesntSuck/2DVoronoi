@@ -16,11 +16,8 @@ namespace Graph2D
         /// </summary>
         public static List<Graph> Create(Vector2[] nuclei)
         {
-            // Create super triangle
-            Vector2[] superTriangle = DelaunayTriangulation.CreateSuperTriangle(nuclei);
-
             // Create DelaunayTriangulation
-            Graph delaunayTriangulation = DelaunayTriangulation.Create(nuclei, superTriangle);
+            Graph delaunayTriangulation = DelaunayTriangulation.Create(nuclei);
 
             // Convert to Voronoi Cells
             List<Graph> cells = Create(delaunayTriangulation);

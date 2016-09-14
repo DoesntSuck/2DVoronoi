@@ -7,26 +7,30 @@ using UnityEngine;
 
 namespace Assets
 {
-    [CustomEditor(typeof(SceneViewMouseMoveListener))]
+    // TODO: Rename this shit!
+    [CustomEditor(typeof(DelaunayTest))]
     public class SceneViewMouseListener : Editor
     {
-        SceneViewMouseMoveListener listener;
+        DelaunayTest listener;
 
         void OnEnable()
         {
             // Get the selected Delaunay Test script
             if (Selection.activeGameObject != null)
-                listener = Selection.activeGameObject.GetComponent<SceneViewMouseMoveListener>();
+                listener = Selection.activeGameObject.GetComponent<DelaunayTest>();
         }
 
         void OnSceneGUI()
         {
-            // Get mouse position on GUI and convert to a world space ray
-            Vector2 mouseGUIPosition = Event.current.mousePosition;
-            Ray worldSpaceRay = HandleUtility.GUIPointToWorldRay(mouseGUIPosition);
+            if (listener != null)
+            {
+                // Get mouse position on GUI and convert to a world space ray
+                Vector2 mouseGUIPosition = Event.current.mousePosition;
+                Ray worldSpaceRay = HandleUtility.GUIPointToWorldRay(mouseGUIPosition);
 
-            // Pass ray to delaunay test
-            listener.MouseMoved(worldSpaceRay);
+                // Pass ray to delaunay test
+                listener.MouseMoved(worldSpaceRay);
+            }
         }
     }
 }

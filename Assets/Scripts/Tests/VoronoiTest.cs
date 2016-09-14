@@ -61,14 +61,6 @@ namespace Assets
 
         void OnDrawGizmos()
         {
-            if (hoveredCells != null)
-            {
-                GraphDebug.EdgeColour = Color.magenta;
-
-                foreach (Graph cell in cells)
-                    GraphDebug.DrawEdges(cell.Edges);
-            }
-
             IEnumerable<Transform> children = GetComponentsInChildren<Transform>()     // Get all child transforms
                 .Where(c => c != transform);                                           // Except THIS transform
 
@@ -83,6 +75,14 @@ namespace Assets
 
                 foreach (Graph cell in cells)
                     GraphDebug.DrawEdges(cell.Edges);
+
+                if (hoveredCells != null)
+                {
+                    GraphDebug.EdgeColour = Color.magenta;
+
+                    foreach (Graph cell in cells)
+                        GraphDebug.DrawEdges(cell.Edges);
+                }
             }
         }
     }

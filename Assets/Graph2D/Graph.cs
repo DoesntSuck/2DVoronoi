@@ -49,11 +49,11 @@ namespace Graph2D
                 GraphNode b = Nodes[mesh.triangles[i + 1]];
                 GraphNode c = Nodes[mesh.triangles[i + 2]];
 
-                CreateEdge(a, b);
-                CreateEdge(a, c);
-                CreateEdge(b, c);
+                GraphEdge ab = CreateEdge(a, b);
+                GraphEdge ac = CreateEdge(a, c);
+                GraphEdge bc = CreateEdge(b, c);
 
-                DefineTriangle(a, b, c);
+                DefineTriangle(ab, ac, bc);
             }
         }
 
@@ -130,22 +130,27 @@ namespace Graph2D
         /// </summary>
         public GraphTriangle CreateTriangle(GraphEdge edge, GraphNode node)
         {
+            List<GraphEdge> otherEdges = new List<GraphEdge>();
+
             // Check if the neccesary edges already exist
             foreach (GraphNode edgeNode in edge.Nodes)
             {
                 // If the graph doesn't contain the required edge, add it
-                if (!node.HasEdge(edgeNode))
-                    CreateEdge(edgeNode, node);
+                GraphEdge other = node.GetEdge(edgeNode);
+                if (other == null)
+                    other = CreateEdge(edgeNode, node);
+
+                otherEdges.Add(other);
             }
 
             // Create triangle between nodes
-            return DefineTriangle(edge.Nodes[0], edge.Nodes[1], node);
+            return DefineTriangle(edge, otherEdges[1], otherEdges[0]);
         }
 
         /// <summary>
         /// Adds a triangle connecting the given nodes. Will throw an exception if the given nodes do not form a triangle 
         /// </summary>
-        public GraphTriangle DefineTriangle(GraphNode a, GraphNode b, GraphNode c)
+        public GraphTriangle DefineTriangle(GraphEdge a, GraphEdge b, GraphEdge c)
         {
             // Create triangle and add to triangle list
             GraphTriangle triangle = new GraphTriangle(a, b, c);
@@ -318,8 +323,12 @@ namespace Graph2D
                         }
                     }
 
+                    GraphEdge ab = insideNode.GetEdge(intersectionNodes[0]);
+                    GraphEdge ac = insideNode.GetEdge(intersectionNodes[1]);
+                    GraphEdge bc = intersectionNodes[0].GetEdge(intersectionNodes[1]);
+
                     // Create a triangle between the inside node and the two intersection nodes
-                    DefineTriangle(insideNode, intersectionNodes[0], intersectionNodes[1]);
+                    DefineTriangle(ab, ac, bc);
                 }
 
                 //    /\
@@ -366,22 +375,40 @@ namespace Graph2D
                         }
                     }
 
+                    //            .   /\
+                    //            _`./__\__ clip edge
+                    //              /`.  \
+                    // insideSide  /   `. \  intersectionSide
+                    //            /______`.\
+                    //                     `. bisecting edge
+
                     // Add an edge between intersection nodes, creates a four sided polygon
-                    CreateEdge(intersectionNodes[0], intersectionNodes[1]);
+                    GraphEdge intersectionEdge = CreateEdge(intersectionNodes[0], intersectionNodes[1]);
+                    GraphEdge insideEdge = insideNodes[0].GetEdge(insideNodes[1]);
 
                     // Create an edge that divides the polygon into two triangles
                     GraphEdge bisectingEdge;
+                    GraphEdge intersectionSideEdge;
+                    GraphEdge insideSideEdge;
 
                     // We want to create an edge between an intersection node and a non-adjacent inside node
                     if (intersectionNodes[0].HasEdge(insideNodes[0]))               // If there is an edge, the nodes are adjacent   
+                    {
                         bisectingEdge = CreateEdge(intersectionNodes[1], insideNodes[0]);
-
+                        intersectionSideEdge = intersectionNodes[0].GetEdge(insideNodes[0]);
+                        insideSideEdge = intersectionNodes[1].GetEdge(insideNodes[1]);
+                    }
+                        
                     else
+                    {
                         bisectingEdge = CreateEdge(intersectionNodes[0], insideNodes[0]);
-
+                        intersectionSideEdge = intersectionNodes[1].GetEdge(insideNodes[0]);
+                        insideSideEdge = intersectionNodes[0].GetEdge(insideNodes[1]);
+                    }
+                        
                     // Create two triangles from four sided polygon
-                    DefineTriangle(insideNodes[0], intersectionNodes[0], intersectionNodes[1]);
-                    DefineTriangle(insideNodes[1], bisectingEdge.Nodes[0], bisectingEdge.Nodes[1]);
+                    DefineTriangle(bisectingEdge, intersectionEdge, intersectionSideEdge);
+                    DefineTriangle(bisectingEdge, insideEdge, insideSideEdge);
                 }
             }
         }

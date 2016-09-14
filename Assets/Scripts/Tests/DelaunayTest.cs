@@ -8,9 +8,6 @@ namespace Assets
     [RequireComponent(typeof(PolygonCollider2D))]
     public class DelaunayTest : MonoBehaviour, SceneViewMouseMoveListener
     {
-        [Tooltip("The transforms that define the Delaunay Super Triangle")]
-        public Transform[] SuperTriangle;
-
         [Tooltip("Whether or not to draw each triangles circumcircle")]
         public bool Circumcircles;
 
@@ -22,7 +19,6 @@ namespace Assets
         {
             // Get children that aren't a super triangle OR this transform
             children = GetComponentsInChildren<Transform>()
-                .Except(SuperTriangle)                  // Except for the super triangle transforms
                 .Where(c => c != transform)             // Not THIS transform
                 .ToList();
         }
@@ -33,46 +29,21 @@ namespace Assets
             // Get transform positions
             Vector2[] vectors = children.Select(c => (Vector2)c.position).ToArray();
 
-            // If there is no super triangle specified MAKE ONE
-            if (SuperTriangle == null || SuperTriangle.Length != 3)
-            {
-                SuperTriangle = new Transform[3];
-
-                // Create one and add a game object node for each
-                Vector2[] superTriangleVectors = DelaunayTriangulation.CreateSuperTriangle(vectors);
-                for (int i = 0; i < superTriangleVectors.Length; i++)
-                {
-                    // Create new node game object, add as child, and set position
-                    GameObject superTriangleNode = new GameObject("SuperTriangleNode");
-                    superTriangleNode.transform.parent = transform;
-                    superTriangleNode.transform.position = superTriangleVectors[i];
-
-                    // Save ref
-                    SuperTriangle[i] = superTriangleNode.transform;
-                }
-            }
-
+            // Create super triangle graph so can use super triangle nodes for polygon collider
+            triangulation = DelaunayTriangulation.CreateSuperTriangleGraph(vectors);
+            Vector2[] superTriangle = triangulation.Nodes.Select(n => n.Vector).ToArray();
 
             // Set collider points to the super triangle vectors
-            GetComponent<PolygonCollider2D>().points = SuperTriangle.Select(s => (Vector2)s.position).ToArray();
+            GetComponent<PolygonCollider2D>().points = superTriangle;
 
-            // Create triangulation
-            triangulation = DelaunayTriangulation.Create(vectors, SuperTriangle.Select(s => (Vector2)s.position).ToArray());
+            // Insert vectors into triangulation
+            DelaunayTriangulation.Insert(triangulation, vectors);
         }
 
         void OnDrawGizmos()
         {
-            // Draw SuperTriangle
-            if (SuperTriangle != null && SuperTriangle.Length == 3)
-            {
-                Gizmos.DrawLine(SuperTriangle[0].position, SuperTriangle[1].position);
-                Gizmos.DrawLine(SuperTriangle[0].position, SuperTriangle[2].position);
-                Gizmos.DrawLine(SuperTriangle[1].position, SuperTriangle[2].position);
-            }
-
             // Get children that aren't a super triangle OR this transform
             children = GetComponentsInChildren<Transform>()
-                .Except(SuperTriangle)                  // Except for the super triangle transforms
                 .Where(c => c != transform)             // Not THIS transform
                 .ToList();
 
@@ -94,7 +65,6 @@ namespace Assets
                         GraphDebug.DrawCircumcircle(triangle, Color.magenta);
                     }
                 }
-
             }
         }
 
