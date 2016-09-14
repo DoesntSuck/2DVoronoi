@@ -10,6 +10,42 @@ namespace UnityEngine
     /// </summary>
     public static class MathExtension
     {
+        public static Bounds CalculateBounds(IEnumerable<Vector2> vectors)
+        {
+            // Maximal and minimal vectors
+            Vector2 greatestX = vectors.First();
+            Vector2 leastestX = vectors.First();
+            Vector2 greatestY = vectors.First();
+            Vector2 leastestY = vectors.First();
+
+            // Find maximal and minimal vectors
+            foreach (Vector2 vector in vectors)
+            {
+                if (vector.x > greatestX.x)
+                    greatestX = vector;
+                else if (vector.x < leastestX.x)
+                    leastestX = vector;
+
+                if (vector.y > greatestY.y)
+                    greatestY = vector;
+                else if (vector.y < leastestY.y)
+                    leastestY = vector;
+            }
+
+            // Difference between maximal and minimal vectors is the size of bounds
+            float dX = greatestX.x - leastestX.x;
+            float dY = greatestY.y - leastestY.y;
+            Vector3 size = new Vector3(dX, dY);
+
+            // Minimal vector plus half the total size gives the centre of the bounds
+            float centreX = leastestX.x + (dX / 2);
+            float centreY = leastestY.y + (dY / 2);
+            Vector3 centre = new Vector3(centreX, centreY);
+
+            return new Bounds(centre, size);
+        }
+
+        // TODO: Use side of line test for each GraphEdge vs polygonal centre - instead of this method which requires adjacent poitns to be edges
 
         public static bool ContainsPoint(Vector2[] polyPoints, Vector2 p)
         { 
@@ -168,11 +204,6 @@ namespace UnityEngine
                 return max - Mathf.Sqrt((1 - unifrom) * (max - min) * (max - mid));
         }
 
-        public static bool AnyWithinDistance(this Vector2 vector, IEnumerable<Vector2> others, float distance)
-        {
-            return others.Where(v => Vector2.Distance(vector, v) <= distance).Any();
-        }
-
         /// <summary>
         /// Calculates the circumcircle of the triangle defined by the given position vectors
         /// </summary>
@@ -207,7 +238,7 @@ namespace UnityEngine
 
             // Intserection of lines perpAB and perpAC defines circumcentre (also perpBC, but only two lines required for calculation)
             Vector2d intersection = new Vector2d();
-            if (!Mathd.LineIntersection(midAB, perpAB * 100, midAC, perpAC * 100, ref intersection))
+            if (!Mathd.LineIntersection(midAB, midAB + perpAB, midAC, midAC + perpAC, ref intersection))
                 throw new ArgumentException("No line intersection");        // Something has gone wrong, there is no intersection
 
             // Return intersection, hopefully no error thrown
