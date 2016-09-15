@@ -76,20 +76,11 @@ namespace Graph2D
             else throw new ArgumentException("Node is not part of this edge");
         }
 
-        /// <summary>
-        /// Checks if this edge's nodes and the given edge's nodes contain the same vector data
-        /// </summary>
-        public bool Equals(GraphEdge other)
+        public override string ToString()
         {
-            // Check both nodes against this edge's nodes
-            foreach (GraphNode node in other.Nodes)
-            {
-                // If one is not the same, then the edges are not the same
-                if (!Contains(node))
-                    return false;
-            }
-
-            return true;
+            return "GraphEdge: " + 
+                Nodes[0].Vector.ToString() + " -> " + 
+                Nodes[1].Vector.ToString();
         }
     }
 }

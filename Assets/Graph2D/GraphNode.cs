@@ -90,12 +90,9 @@ namespace Graph2D
             return false;
         }
 
-        /// <summary>
-        /// Checks that this node and the given node's vector data is the same
-        /// </summary>
-        public bool Equals(GraphNode other)
+        public override string ToString()
         {
-            return Vector == other.Vector;
+            return "GraphNode: " + Vector.ToString();
         }
     }
 }

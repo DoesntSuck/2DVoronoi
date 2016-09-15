@@ -6,7 +6,7 @@ using Graph2D;
 [RequireComponent(typeof(MeshFilter))]
 public class Breakable : MonoBehaviour
 {
-    // TODO: DONT NEED TO ORDER VORONOI CELL NODES AND EDGES CLOCKWISE -> just text that another node is on the SAME side as the polygonal centre when doing clipping
+    public int NucleiCount = 10;
 
     void OnMouseDown()
     {
@@ -24,7 +24,7 @@ public class Breakable : MonoBehaviour
     public void Break(Vector2 impactPosition, float impactForce)
     {
         // Generate cloud of points centred at impact position
-        Vector2[] nuclei = RandomNuclei(impactPosition, impactForce, 10);
+        Vector2[] nuclei = RandomNuclei(impactPosition, impactForce, NucleiCount);
 
         // Each point converts to the nuclei of a Voronoi cell
         List<Graph> cells = VoronoiTessellation.Create(nuclei);
@@ -32,29 +32,13 @@ public class Breakable : MonoBehaviour
         Mesh mesh = GetComponent<MeshFilter>().mesh;
         foreach (Graph cell in cells)
         {
-            // Create graph that mirrors mesh
-            Graph meshGraph = new Graph(mesh);
+            Mesh clippedMesh = MeshClipper.Clip(mesh, cell);
 
-            // Calculate polygonal centre of convex mesh
-            Vector2 polygonalCentre = MathExtension.PolygonCentre(cell.Nodes.Select(n => n.Vector).ToList());
-
-            // Clip once per graph edge
-            foreach (GraphEdge clipEdge in cell.Edges)
-            {
-                // Which side of edge is counted as being inside?
-                float inside = MathExtension.Side(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, polygonalCentre);
-
-                // Clip edges that aren't inside of line
-                meshGraph.Clip(clipEdge, inside);
-            }
-                
-            // Convert graph to mesh again
-            Mesh croppedMesh = meshGraph.ToMesh();
-            if (croppedMesh != null)                // If mesh is not completely cropped
+            if (clippedMesh != null)                // If mesh is not completely cropped
             {
                 // Create new object and give it the mesh chunk
                 GameObject chunk = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                chunk.GetComponent<MeshFilter>().mesh = croppedMesh;
+                chunk.GetComponent<MeshFilter>().mesh = clippedMesh;
             }
         }
 

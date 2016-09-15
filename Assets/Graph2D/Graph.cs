@@ -60,13 +60,13 @@ namespace Graph2D
         /// <summary>
         /// Creates a mesh by converting this graphs nodes to verts and triangles to mesh triangles. Returns null if this graph is empty
         /// </summary>
-        public Mesh ToMesh()
+        public Mesh ToMesh(string name = null)
         {
             // If graph is empty, do not return a mesh, return null
             if (Nodes.Count == 0 || Edges.Count == 0 || Triangles.Count == 0)
                 return null;
 
-            Mesh mesh = new Mesh();
+            Mesh mesh = new Mesh() { name = name };
 
             // Create dictionary of node, index pairs
             Dictionary<GraphNode, int> nodeIndexDict = new Dictionary<GraphNode, int>();
@@ -256,7 +256,7 @@ namespace Graph2D
         /// Crops the graph according to the given clip edge. Parts of the graph that lie outside the edge are removed. Edges and triangles extending past the clip edge
         /// are truncated at their intersection with the clipping edge.
         /// </summary>
-        public void Clip(GraphEdge clipEdge, float inside)
+        public void Clip(Vector2 edgePoint1, Vector2 edgePoint2, float inside)
         {
             // Dict that associates edges with their new, clipped version
             Dictionary<GraphEdge, GraphEdge> oldNewEdgeDict = new Dictionary<GraphEdge, GraphEdge>();
@@ -265,7 +265,7 @@ namespace Graph2D
             foreach (GraphTriangle subjectTriangle in trianglesCopy)
             {
                 // Get the indices of all triangle nodes that are 'inside' the given edge
-                List<int> insideIndices = subjectTriangle.SameSideNodeIndices(clipEdge, inside);
+                List<int> insideIndices = subjectTriangle.SameSideNodeIndices(edgePoint1, edgePoint2, inside);
 
                 //    /\
                 //   /  \   triangle      ↑
@@ -309,7 +309,7 @@ namespace Graph2D
                         else
                         {
                             // Calculate the intersection of clip edge and tri-edge
-                            Vector2 intersection = MathExtension.KnownIntersection(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, insideNode.Vector, outsideNode.Vector);
+                            Vector2 intersection = MathExtension.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
 
                             // Create node at intersection, remember node
                             GraphNode intersectionNode = CreateNode(intersection);
@@ -325,7 +325,7 @@ namespace Graph2D
 
                     GraphEdge ab = insideNode.GetEdge(intersectionNodes[0]);
                     GraphEdge ac = insideNode.GetEdge(intersectionNodes[1]);
-                    GraphEdge bc = intersectionNodes[0].GetEdge(intersectionNodes[1]);
+                    GraphEdge bc = CreateEdge(intersectionNodes[0], intersectionNodes[1]);
 
                     // Create a triangle between the inside node and the two intersection nodes
                     DefineTriangle(ab, ac, bc);
@@ -343,7 +343,7 @@ namespace Graph2D
                     int index = 0;
 
                     // Get list of inside nodes by excluding outside node from list
-                    int outsideNodeIndex = (insideIndices[0] + insideIndices[1]) - 3;
+                    int outsideNodeIndex = 3 - (insideIndices[0] + insideIndices[1]);
                     GraphNode outsideNode = subjectTriangle.Nodes[outsideNodeIndex];
                     List<GraphNode> insideNodes = subjectTriangle.Nodes.Where(n => n != outsideNode).ToList();
 
@@ -361,7 +361,7 @@ namespace Graph2D
                         else
                         {
                             // Calculate the intersection of clip edge and tri-edge
-                            Vector2 intersection = MathExtension.KnownIntersection(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, insideNode.Vector, outsideNode.Vector);
+                            Vector2 intersection = MathExtension.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
 
                             // Create node at intersection, remember node
                             GraphNode intersectionNode = CreateNode(intersection);
@@ -376,7 +376,7 @@ namespace Graph2D
                     }
 
                     //                  .   /\
-                    //                  _`./__\__ clip edge
+                    //                 __`./__\___ clip edge
                     //                    /`.  \
                     //     insideSide    /   `. \  intersectionSide
                     //                  /______`.\

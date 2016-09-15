@@ -58,7 +58,7 @@ namespace Graph2D
         public GraphTriangle(GraphEdge a, GraphEdge b, GraphEdge c)
         {
             Edges = new GraphEdge[] { a, b, c };
-            Nodes = a.Nodes.Union(b.Nodes).Union(c.Nodes).ToArray();    // Get each unique node entry, convert to array
+            Nodes = a.Nodes.Union(b.Nodes).Union(c.Nodes).Distinct().ToArray();    // Get each unique node entry, convert to array
 
             // Check that there are edges connecting all the nodes
             if (Edges.Contains(null) || Nodes.Contains(null) || Nodes.Length != 3)
@@ -124,13 +124,13 @@ namespace Graph2D
         /// <summary>
         /// Returns a list of indices of the nodes in this triangle that are 'inside' the given edge.
         /// </summary>
-        public List<int> SameSideNodeIndices(GraphEdge clipEdge, float side)
+        public List<int> SameSideNodeIndices(Vector2 edgePoint1, Vector2 edgePoint2, float side)
         {
             // List to store the indices of tri-nodes that are inside the clip edge
             List<int> insideIndices = new List<int>();
             for (int i = 0; i < Nodes.Length; i++)
             {
-                float nodeSide = MathExtension.Side(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, Nodes[i].Vector);
+                float nodeSide = MathExtension.Side(edgePoint1, edgePoint2, Nodes[i].Vector);
 
                 // If this node is on the same side OR on the line
                 if (nodeSide == side || nodeSide == 0)
@@ -138,6 +138,14 @@ namespace Graph2D
             }
 
             return insideIndices;
+        }
+
+        public override string ToString()
+        {
+            return "GraphTriangle: " + 
+                Nodes[0].Vector.ToString() + " -> " + 
+                Nodes[1].Vector.ToString() + " -> " + 
+                Nodes[2].Vector.ToString();
         }
     }
 }
