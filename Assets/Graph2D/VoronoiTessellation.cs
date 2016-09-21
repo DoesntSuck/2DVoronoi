@@ -40,6 +40,7 @@ namespace Graph2D
             {
                 // Create a new voronoi cell add to list of cells
                 Graph cell = new Graph();
+                cell.Nuclei = node.Vector;
                 cells.Add(cell);
 
                 // Dictionary to hold association between triangles in delaunay and circumcentre nodes in voronoi cell
@@ -52,11 +53,13 @@ namespace Graph2D
                     triNodeDict.Add(triangle, cellNode);
                 }
 
+                HashSet<GraphTriangle> visitedTriangles = new HashSet<GraphTriangle>();
                 // Create edges between bordering triangles
                 foreach (GraphTriangle triangle in node.Triangles)
                 {
+                    visitedTriangles.Add(triangle);
                     // Get collection of triangles that border this triangle
-                    IEnumerable<GraphTriangle> borderingTriangles = node.Triangles.Where(t => t != triangle && t.SharesEdge(triangle));
+                    IEnumerable<GraphTriangle> borderingTriangles = node.Triangles.Where(t => !visitedTriangles.Contains(t) && t.SharesEdge(triangle));
                     foreach (GraphTriangle borderingTriangle in borderingTriangles)
                     {
                         // Get triangles' associated node in this cell
@@ -69,7 +72,6 @@ namespace Graph2D
                 }
             }
 
-            // Return list of voronoi cells
             return cells;
         }
     }

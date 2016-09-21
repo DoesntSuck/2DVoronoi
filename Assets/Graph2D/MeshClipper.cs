@@ -13,20 +13,21 @@ namespace Graph2D
             Graph meshGraph = new Graph(mesh);
 
             // Calculate polygonal centre of convex mesh
-            Vector2 polygonalCentre = MathExtension.PolygonCentre(convexClipShape.Nodes.Select(n => n.Vector).ToList());
+            Vector2 nuclei = convexClipShape.Nuclei;
 
             // Clip once per graph edge
             foreach (GraphEdge clipEdge in convexClipShape.Edges)
             {
                 // Which side of edge is counted as being inside?
-                float inside = MathExtension.Side(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, polygonalCentre);
+                float inside = MathExtension.Side(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, nuclei);
 
                 // Clip edges that aren't inside of line
                 meshGraph.Clip(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, inside);
             }
 
             // Return clipped mesh
-            return meshGraph.ToMesh("ClippedMesh");
+            Mesh clippedMesh = meshGraph.ToMesh("Clipped Mesh");
+            return clippedMesh;
         }
     }
 }

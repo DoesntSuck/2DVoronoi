@@ -16,14 +16,15 @@ public class BreakTest : MonoBehaviour
             .ToList();
     }
 
-    // Use this for initialization
-    void Start ()
+    //TODO: Voronoi needs bounds!
+
+    void Start()
     {
         // Create Voronoi cells from child transform positions as nuclei
         Vector2[] nuclei = children.Select(c => (Vector2)c.position).ToArray();
 
         // Each point converts to the nuclei of a Voronoi cell
-        List<Graph> cells = VoronoiTessellation.Create(nuclei);
+        List<Graph> cells = VoronoiTessellation.Create(nuclei, false);
 
         Mesh mesh = GetComponent<MeshFilter>().mesh;
         foreach (Graph cell in cells)
@@ -37,9 +38,4 @@ public class BreakTest : MonoBehaviour
             }
         }
     }
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
 }

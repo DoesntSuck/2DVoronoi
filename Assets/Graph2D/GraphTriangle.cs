@@ -34,23 +34,16 @@ namespace Graph2D
         }
         private Circle circumcircle;
 
-        /// <summary>
-        /// A triangle containing the three given nodes. Throws an error if the nodes are not connected by edges
-        /// </summary>
-        public GraphTriangle(GraphNode a, GraphNode b, GraphNode c)
+        public Circle Incircle
         {
-            Nodes = new GraphNode[] { a, b, c };
-            Edges = new GraphEdge[] 
+            get
             {
-                a.GetEdge(b),
-                b.GetEdge(c),
-                c.GetEdge(a)
-            };
-
-            // Check that there are edges connecting all the nodes
-            if (Edges.Contains(null))
-                throw new ArgumentException("Nodes are not connected and do not constitute a triangle");
+                if (incircle == null)
+                    incircle = MathExtension.Incircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
+                return incircle;
+            }
         }
+        private Circle incircle;
 
         /// <summary>
         /// A triangle containing the three given nodes. Throws an error if the nodes are not connected by edges
@@ -61,8 +54,19 @@ namespace Graph2D
             Nodes = a.Nodes.Union(b.Nodes).Union(c.Nodes).Distinct().ToArray();    // Get each unique node entry, convert to array
 
             // Check that there are edges connecting all the nodes
-            if (Edges.Contains(null) || Nodes.Contains(null) || Nodes.Length != 3)
+            if (Edges.Contains(null) || 
+                Nodes.Contains(null) || 
+                Nodes.Length != 3 || 
+                Nodes[0].Equals(Nodes[1]) || 
+                Nodes[1].Equals(Nodes[2]) || 
+                Nodes[0].Equals(Nodes[2]))
                 throw new ArgumentException("Nodes and edges do not constitute a triangle");
+        }
+        
+        public void OrderNodes()
+        {
+            ClockwiseNodeComparer nodeComparer = new ClockwiseNodeComparer(Incircle.Centre);
+            Array.Sort(Nodes, nodeComparer);
         }
 
         /// <summary>
@@ -71,6 +75,20 @@ namespace Graph2D
         public bool Contains(GraphNode node)
         {
             return Nodes.Contains(node);
+        }
+
+        /// <summary>
+        /// Checks that this triangle contains ALL of the given nodes
+        /// </summary>
+        public bool Contains(params GraphNode[] nodes)
+        {
+            foreach (GraphNode node in nodes)
+            {
+                if (!Contains(node))
+                    return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -133,7 +151,7 @@ namespace Graph2D
                 float nodeSide = MathExtension.Side(edgePoint1, edgePoint2, Nodes[i].Vector);
 
                 // If this node is on the same side OR on the line
-                if (nodeSide == side || nodeSide == 0)
+                if (nodeSide == side)
                     insideIndices.Add(i);
             }
 

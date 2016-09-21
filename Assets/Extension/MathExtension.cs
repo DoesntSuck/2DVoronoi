@@ -101,7 +101,7 @@ namespace UnityEngine
             return new Circle(centre.x, centre.y, greatestDistance);
         }
 
-        public static Vector2 PolygonCentre(List<Vector2> polygonPoints)
+        public static Vector2 PolygonCentre(IList<Vector2> polygonPoints)
         {
             float signedArea = PolygonSignedArea(polygonPoints);
 
@@ -136,7 +136,7 @@ namespace UnityEngine
         /// Calculates the area of the polygon described by the given points. The given points do NOT need to be in clockwise order but each adjacent point in the list
         /// must form an edge on the polygon
         /// </summary>
-        public static float PolygonSignedArea(List<Vector2> polygonPoints)
+        public static float PolygonSignedArea(IList<Vector2> polygonPoints)
         {
             // A =  1 / 2  0Σn-1 (xi * y(i + 1) - x(i + 1) * yi)
             float signedArea = 0;
@@ -202,6 +202,27 @@ namespace UnityEngine
                 return min + Mathf.Sqrt(unifrom * (max - min) * (mid - min));
             else // ...or occurs on rhs of mid point
                 return max - Mathf.Sqrt((1 - unifrom) * (max - min) * (max - mid));
+        }
+
+        public static Circle Incircle(Vector2 a, Vector2 b, Vector2 c)
+        {
+            Vector2d abMid = Vector2.Lerp(a, b, 0.5f);
+            Vector2d acMid = Vector2.Lerp(a, c, 0.5f);
+
+            Vector2d abToCDirection = c - abMid;
+            Vector2d acToBDirection = b - acMid;
+
+            Vector2d centre = Vector2d.zero;
+
+            // Get intersection of lines (abMid, abToCDirection) -> (acMid, acToBDirection)
+            if (!Mathd.LineIntersection(abMid, abMid + abToCDirection, acMid, acMid + acToBDirection, ref centre))
+                throw new ArgumentException("Lines do not intersect");
+
+            double radius = Vector2d.Distance(centre, abMid);
+
+            Circle incircle = new Circle(centre.x, centre.y, radius);
+
+            return incircle;
         }
 
         /// <summary>

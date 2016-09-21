@@ -12,7 +12,7 @@ namespace Graph2D
          /// <summary>
         /// This nodes vector data
         /// </summary>
-        public Vector2 Vector { get; private set; }
+        public Vector2 Vector { get; set; }
 
         /// <summary>
         /// Set of all edges of which this node is a consituent
@@ -88,6 +88,11 @@ namespace Graph2D
 
             // No edges contain the given node
             return false;
+        }
+
+        public bool Equals(GraphNode other)
+        {
+            return Vector.Equals(other.Vector);
         }
 
         public override string ToString()

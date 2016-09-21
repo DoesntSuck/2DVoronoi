@@ -25,6 +25,8 @@ namespace Graph2D
         /// </summary>
         public List<GraphTriangle> Triangles { get; protected set; }
 
+        public Vector2 Nuclei { get; set; }
+
         public Graph()
         {
             Nodes = new List<GraphNode>();
@@ -94,6 +96,7 @@ namespace Graph2D
 
             // convert list to array, give to mesh
             mesh.SetTriangles(triIndices, 0);
+            mesh.RecalculateNormals();
 
             return mesh;
         }
@@ -225,34 +228,6 @@ namespace Graph2D
         }
 
         /// <summary>
-        /// Sets the order of nodes in this graphs collection of nodes according to the order of the indices in the given list
-        /// </summary>
-        public void SetNodeOrder(List<int> indices)
-        {
-            // Throw error if order of entire list is not defined
-            if (indices.Count != Nodes.Count)
-                throw new ArgumentException("Given index list is a different length to Node list");
-
-            // Swap nodes so new order is the same as that defined in given indices list
-            for (int i = 0; i < Nodes.Count; i++)
-                Nodes.Swap(i, indices[i]);
-        }
-
-        /// <summary>
-        /// Sets the order of edges in this graphs collection of edges according to the order of the indices in the given list
-        /// </summary>
-        public void SetEdgeOrder(List<int> indices)
-        {
-            // Throw error if order of entire list is not defined
-            if (indices.Count != Edges.Count)
-                throw new ArgumentException("Given index list is a different length to Edge list");
-
-            // Swap edges so new order is the same as that defined in given indices list
-            for (int i = 0; i < Edges.Count; i++)
-                Edges.Swap(i, indices[i]);
-        }
-
-        /// <summary>
         /// Crops the graph according to the given clip edge. Parts of the graph that lie outside the edge are removed. Edges and triangles extending past the clip edge
         /// are truncated at their intersection with the clipping edge.
         /// </summary>
@@ -260,6 +235,7 @@ namespace Graph2D
         {
             // Dict that associates edges with their new, clipped version
             Dictionary<GraphEdge, GraphEdge> oldNewEdgeDict = new Dictionary<GraphEdge, GraphEdge>();
+            List<GraphNode> deadNodes = new List<GraphNode>();
 
             List<GraphTriangle> trianglesCopy = Triangles.ToList();
             foreach (GraphTriangle subjectTriangle in trianglesCopy)
@@ -276,12 +252,15 @@ namespace Graph2D
 
                 // Case one: NO nodes inside the clip edge, delete the triangle
                 if (insideIndices.Count == 0)
-                    Remove(subjectTriangle);
+                    deadNodes.AddRange(subjectTriangle.Nodes);
 
+                //    outside
                 //    ______            
                 //  __\____/__ clip edge
                 //     \  /
                 //      \/
+                //
+                //    inside
                 
                 // Case: ONE node inside, two nodes outside, intersection nodes and inside node form a triangle
                 else if (insideIndices.Count == 1)
@@ -297,6 +276,7 @@ namespace Graph2D
                     // Iterate through all nodes in triangle that are outside the clip edge
                     foreach (GraphNode outsideNode in outsideNodes)
                     {
+                        deadNodes.Add(outsideNode);         // Mark for later removal
                         // Get ref to edge that has been clipped, check if this edge has already been handled
                         GraphEdge clippedEdge = insideNode.GetEdge(outsideNode);
                         if (oldNewEdgeDict.ContainsKey(clippedEdge))
@@ -331,9 +311,13 @@ namespace Graph2D
                     DefineTriangle(ab, ac, bc);
                 }
 
+                //  outside
+                //
                 //    /\
                 // __/__\__ clip edge
                 //  /____\
+                //
+                //  inside
 
                 // Case: TWO nodes inside, one node outside, intersection nodes and inside nodes form a four sided polygon
                 else if (insideIndices.Count == 2)
@@ -345,6 +329,7 @@ namespace Graph2D
                     // Get list of inside nodes by excluding outside node from list
                     int outsideNodeIndex = 3 - (insideIndices[0] + insideIndices[1]);
                     GraphNode outsideNode = subjectTriangle.Nodes[outsideNodeIndex];
+                    deadNodes.Add(outsideNode);                     // Mark for later removal
                     List<GraphNode> insideNodes = subjectTriangle.Nodes.Where(n => n != outsideNode).ToList();
 
                     foreach (GraphNode insideNode in insideNodes)
@@ -402,9 +387,11 @@ namespace Graph2D
                     // We want to create an edge between an intersection node and a non-adjacent inside node
                     if (intersectionNodes[0].HasEdge(insideNodes[0]))               // If there is an edge, the nodes are adjacent   
                     {
-                        bisectingEdge = CreateEdge(intersectionNodes[1], insideNodes[0]);
-                        intersectionSideEdge = intersectionNodes[0].GetEdge(insideNodes[0]);
-                        insideSideEdge = intersectionNodes[1].GetEdge(insideNodes[1]);
+                        bisectingEdge = CreateEdge(intersectionNodes[0], insideNodes[1]);
+                        intersectionSideEdge = intersectionNodes[1].GetEdge(insideNodes[1]);
+                        insideSideEdge = intersectionNodes[0].GetEdge(insideNodes[0]);
+
+                        // Intersection Side triangle node order: 
                     }
                         
                     else
@@ -415,10 +402,17 @@ namespace Graph2D
                     }
                         
                     // Create two triangles from four sided polygon
-                    DefineTriangle(bisectingEdge, intersectionEdge, intersectionSideEdge);
-                    DefineTriangle(bisectingEdge, insideEdge, insideSideEdge);
+                    GraphTriangle intersectionSideTriangle = DefineTriangle(bisectingEdge, intersectionEdge, intersectionSideEdge);
+                    intersectionSideTriangle.OrderNodes();
+
+                    GraphTriangle insideSideTriangle = DefineTriangle(insideSideEdge, insideEdge, bisectingEdge);
+                    insideSideTriangle.OrderNodes();
                 }
             }
+            
+            // Remove triangles outside the crop edge
+            foreach (GraphNode deadNode in deadNodes)
+                Destroy(deadNode);
         }
     }
 }
