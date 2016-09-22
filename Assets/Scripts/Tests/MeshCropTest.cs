@@ -7,6 +7,7 @@ namespace Assets
     [RequireComponent(typeof(MeshFilter))]
     public class MeshCropTest : MonoBehaviour
     {
+        public Vector2 Nuclei;
         public Vector2[] CropPolygon;
 
         private Graph meshGraph;
@@ -15,15 +16,13 @@ namespace Assets
         {
             Mesh mesh = GetComponent<MeshFilter>().mesh;
 
-            Vector2 polygonCentre = Vector2.zero;
-
             meshGraph = new Graph(mesh);
             for (int i = 0; i < CropPolygon.Length; i++)
             {
                 Vector2 current = CropPolygon[i];
                 Vector2 next = CropPolygon[(i + 1) % CropPolygon.Length];
 
-                float side = MathExtension.Side(current, next, polygonCentre);
+                float side = MathExtension.Side(current, next, Nuclei);
                 meshGraph.Clip(current, next, side);
             }
 
@@ -32,6 +31,8 @@ namespace Assets
 
         void OnDrawGizmos()
         {
+            GraphDebug.DrawVector(Nuclei, Color.white, 0.01f);
+
             // Draw CropPolygon
             if (CropPolygon != null)
             {

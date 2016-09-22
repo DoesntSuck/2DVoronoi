@@ -158,6 +158,21 @@ namespace Graph2D
             return insideIndices;
         }
 
+        public IEnumerable<GraphNode> SameSideNodes(Vector2 edgePoint1, Vector2 edgePoint2, float side)
+        {
+            return Nodes.Where(n => MathExtension.Side(edgePoint1, edgePoint2, n.Vector) == side);
+        }
+
+        public IEnumerable<GraphNode> OpposideSideNodes(Vector2 edgePoint1, Vector2 edgePoint2, float side)
+        {
+            return Nodes.Where(n => MathExtension.Side(edgePoint1, edgePoint2, n.Vector) == -side);
+        }
+
+        public IEnumerable<GraphNode> OnEdgeNodes(Vector2 edgePoint1, Vector2 edgePoint2)
+        {
+            return Nodes.Where(n => MathExtension.Side(edgePoint1, edgePoint2, n.Vector) == 0);
+        }
+
         public override string ToString()
         {
             return "GraphTriangle: " + 
