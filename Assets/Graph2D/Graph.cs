@@ -227,229 +227,51 @@ namespace Graph2D
                 edge.RemoveTriangle(triangle);
         }
 
-        /// <summary>
-        /// Crops the graph according to the given clip edge. Parts of the graph that lie outside the edge are removed. Triangles extending past the clip edge
-        /// are truncated at their intersection with the clipping edge.
-        /// </summary>
-        public void Clip(Vector2 edgePoint1, Vector2 edgePoint2, float inside)
+        public List<GraphNode> OutsideNodes()
         {
-            // Dict that associates edges with their new, clipped version
-            Dictionary<GraphEdge, GraphEdge> oldNewEdgeDict = new Dictionary<GraphEdge, GraphEdge>();
-            List<GraphNode> deadNodes = new List<GraphNode>();
+            List<GraphNode> outsideNodes = new List<GraphNode>();
 
-            // Iterate through every triangle in Graph seeing if it has been clipped
-            List<GraphTriangle> trianglesCopy = Triangles.ToList();
-            foreach (GraphTriangle subjectTriangle in trianglesCopy)
+            IEnumerable<GraphEdge> outsideEdges = Edges.Where(e => e.Triangles.Count == 1);
+            foreach (GraphEdge outsideEdge in outsideEdges)
+                // Add nodes not already contained in outsideNodes
+                outsideNodes.AddRange(outsideEdge.Nodes.Where(n => !outsideNodes.Contains(n)));
+
+            ClockwiseNodeComparer nodeComparer = new ClockwiseNodeComparer(Nuclei);
+            outsideNodes.Sort(nodeComparer);
+
+            return outsideNodes;
+        }
+
+        public bool Closed()
+        {
+            List<GraphNode> outsideNodes = OutsideNodes();
+
+            foreach (GraphNode node in outsideNodes)
             {
-                // Get the indices of all triangle nodes that are 'inside' the given edge
-                List<int> insideIndices = subjectTriangle.SameSideNodeIndices(edgePoint1, edgePoint2, inside);
-
-                /// <summary>
-                /// Case: NO nodes inside the clip edge, delete the triangle
-                ///     ↑
-                ///  outside
-                ///
-                ///    /\
-                ///   /  \   triangle      
-                ///  /____\              
-                /// ________ clip edge
-                ///
-                ///  inside
-                ///     ↓
-                /// </summary>
-
-                if (insideIndices.Count == 0)
-                    deadNodes.AddRange(subjectTriangle.Nodes);
-
-                /// <summary>
-                /// Case: ONE node INSIDE, TWO nodes OUTSIDE; intersection nodes and inside node form a triangle
-                ///       ↑
-                ///    outside
-                ///    ______            
-                ///  __\____/__ clip edge
-                ///     \  /
-                ///      \/
-                ///
-                ///    inside
-                ///       ↓
-                /// </summary>
-
-                else if (insideIndices.Count == 1)
-                {
-                    // Remember the intersection nodes so they can be triangulated
-                    GraphNode[] intersectionNodes = new GraphNode[2];
-                    int intersectionIndex = 0;
-
-                    // Get ref to node on inside of clip edge, get outside node iterator
-                    GraphNode insideNode = subjectTriangle.Nodes[insideIndices[0]];
-                    IEnumerable<GraphNode> outsideNodes = subjectTriangle.Nodes.Where(n => n != insideNode);
-
-                    // Iterate through all nodes in triangle that are outside the clip edge
-                    foreach (GraphNode outsideNode in outsideNodes)
-                    {
-                        deadNodes.Add(outsideNode);         // Mark for later removal
-                        // Get ref to edge that has been clipped, check if this edge has already been handled
-                        GraphEdge clippedEdge = insideNode.GetEdge(outsideNode);
-                        if (oldNewEdgeDict.ContainsKey(clippedEdge))
-                        {
-                            // Get the new edges intersection node, add to array
-                            GraphNode intersectionNode = oldNewEdgeDict[clippedEdge].GetOther(insideNode);
-                            intersectionNodes[intersectionIndex++] = intersectionNode;
-                        }
-
-                        else
-                        {
-                            // Calculate the intersection of clip edge and tri-edge
-                            Vector2 intersection = MathExtension.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
-
-                            // TODO: handle when: intersection == edgePoint1 || edgePoint2
-                            // if the intersection == the outside node || inside node, then don't add a node.
-                            // if intersection == inside node, 
-
-                            // Create node at intersection, remember node
-                            GraphNode intersectionNode = CreateNode(intersection);
-                            intersectionNodes[intersectionIndex++] = intersectionNode;
-
-                            // Create an edge from the insideNode to the intersectionNode
-                            GraphEdge insideToIntersectionEdge = CreateEdge(insideNode, intersectionNode);
-
-                            // Add old and new edge to dict
-                            oldNewEdgeDict.Add(clippedEdge, insideToIntersectionEdge);
-                        }
-                    }
-
-                    GraphEdge ab = insideNode.GetEdge(intersectionNodes[0]);
-                    GraphEdge ac = insideNode.GetEdge(intersectionNodes[1]);
-                    GraphEdge bc = CreateEdge(intersectionNodes[0], intersectionNodes[1]);
-
-                    // Create a triangle between the inside node and the two intersection nodes
-                    DefineTriangle(ab, ac, bc);
-                }
-
-                /// <summary>
-                /// Case: TWO nodes INSIDE, ONE node OUTSIDE; intersection nodes and inside nodes form a four sided polygon, need to triangulate the polygon
-                ///    ↑
-                ///  outside
-                ///
-                ///    /\
-                /// __/__\__ clip edge
-                ///  /____\
-                ///
-                ///  inside
-                ///     ↓
-                /// </summary>
-                else if (insideIndices.Count == 2)
-                {
-                    // Remember the intersection nodes so they can be triangulated
-                    GraphNode[] intersectionNodes = new GraphNode[2];
-                    int index = 0;
-
-                    // Get list of inside nodes by excluding outside node from list
-                    int outsideNodeIndex = 3 - (insideIndices[0] + insideIndices[1]);
-                    GraphNode outsideNode = subjectTriangle.Nodes[outsideNodeIndex];
-                    deadNodes.Add(outsideNode);                     // Mark for later removal
-                    List<GraphNode> insideNodes = subjectTriangle.Nodes.Where(n => n != outsideNode).ToList();
-
-                    foreach (GraphNode insideNode in insideNodes)
-                    {
-                        // Get ref to edge that has been clipped, check if this edge has already been handled
-                        GraphEdge clippedEdge = insideNode.GetEdge(outsideNode);
-                        if (oldNewEdgeDict.ContainsKey(clippedEdge))
-                        {
-                            // Get the new edges intersection node, add to array
-                            GraphNode intersectionNode = oldNewEdgeDict[clippedEdge].GetOther(insideNode);
-                            intersectionNodes[index++] = intersectionNode;
-                        }
-
-                        else
-                        {
-                            // Calculate the intersection of clip edge and tri-edge
-                            Vector2 intersection = MathExtension.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
-
-                            // Create node at intersection, remember node
-                            GraphNode intersectionNode = CreateNode(intersection);
-                            intersectionNodes[index++] = intersectionNode;
-
-                            // Create an edge from the insideNode to the intersectionNode
-                            GraphEdge insideToIntersectionEdge = CreateEdge(insideNode, intersectionNode);
-
-                            // Add old and new edge refs to dict
-                            oldNewEdgeDict.Add(clippedEdge, insideToIntersectionEdge);
-                        }
-                    }
-
-                    //                  .   /\
-                    //                 __`./__\___ clip edge
-                    //                    /`.  \
-                    //     insideSide    /   `. \  intersectionSide
-                    //                  /______`.\
-                    //                           `. bisecting edge
-
-                    //                      /\   ,
-                    //                  ___/__\,'__ clip edge
-                    //                    /  ,'\
-                    // intersectionSide  / ,'   \  insideSide
-                    //                  /,'______\
-                    //                 ,'     
-                    // bisecting edge     
-
-                    // Add an edge between intersection nodes, creates a four sided polygon
-                    GraphEdge intersectionEdge = CreateEdge(intersectionNodes[0], intersectionNodes[1]);
-                    GraphEdge insideEdge = insideNodes[0].GetEdge(insideNodes[1]);
-
-                    // Create an edge that divides the polygon into two triangles
-                    GraphEdge bisectingEdge;
-                    GraphEdge intersectionSideEdge;
-                    GraphEdge insideSideEdge;
-
-                    // We want to create an edge between an intersection node and a non-adjacent inside node
-                    if (intersectionNodes[0].HasEdge(insideNodes[0]))               // If there is an edge, the nodes are adjacent   
-                    {
-                        bisectingEdge = CreateEdge(intersectionNodes[0], insideNodes[1]);
-                        intersectionSideEdge = intersectionNodes[1].GetEdge(insideNodes[1]);
-                        insideSideEdge = intersectionNodes[0].GetEdge(insideNodes[0]);
-
-                        // Intersection Side triangle node order: 
-                    }
-                        
-                    else
-                    {
-                        bisectingEdge = CreateEdge(intersectionNodes[0], insideNodes[0]);
-                        intersectionSideEdge = intersectionNodes[1].GetEdge(insideNodes[0]);
-                        insideSideEdge = intersectionNodes[0].GetEdge(insideNodes[1]);
-                    }
-                        
-                    // Create two triangles from four sided polygon
-                    GraphTriangle intersectionSideTriangle = DefineTriangle(bisectingEdge, intersectionEdge, intersectionSideEdge);
-                    intersectionSideTriangle.OrderNodes();
-
-                    GraphTriangle insideSideTriangle = DefineTriangle(insideSideEdge, insideEdge, bisectingEdge);
-                    insideSideTriangle.OrderNodes();
-                }
+                if (node.Edges.Count < 2)
+                    return false;
             }
-            
-            // Remove triangles outside the crop edge
-            foreach (GraphNode deadNode in deadNodes)
-                Destroy(deadNode);
+
+            return true;
         }
 
         // Iterate through all triangles
         // Get number of:
-        // Inside nodes
-        // Outside nodes
-        // On edge nodes
+            // Inside nodes
+            // Outside nodes
+            // On edge nodes
         // If (Outside nodes == 0)
-        // Triangle stays, carry on...
+            // Triangle stays, carry on...
         // else if(Inside nodes == 0)
-        // Triangle is marked for deletion BUT, check each ON EDGE node to see if it is shared by any1... DONT DELETED SHARED ON EDGE NODES
+            // Triangle is marked for deletion BUT, check each ON EDGE node to see if it is shared by any1... DONT DELETE SHARED ON EDGE NODES
         // else if (Inside nodes == 2)
-        // 4-sided polygon method: triangulate
+            // 4-sided polygon method: triangulate
         // else
-        // 2 nodes outside method: create triangle with intersection edge
-        // if (On edge nodes == 1)
-        // the on edge node becaomes one of the nodes on the intersection edge
+            // 2 nodes outside method: create triangle with intersection edge
+            // if (On edge nodes == 1)
+                // the on edge node becaomes one of the nodes on the intersection edge
 
-        public void ClipTriangle(Vector2 edgePoint1, Vector2 edgePoint2, float inside)
+        public void Clip(Vector2 edgePoint1, Vector2 edgePoint2, float inside)
         {
             // Dict that associates edges with their new, clipped version
             Dictionary<GraphEdge, GraphEdge> oldNewEdgeDict = new Dictionary<GraphEdge, GraphEdge>();
@@ -563,11 +385,12 @@ namespace Graph2D
                     GraphEdge bc = CreateEdge(intersectionNodes[0], intersectionNodes[1]);
 
                     // Create a triangle between the inside node and the two intersection nodes
-                    DefineTriangle(ab, ac, bc);
+                    GraphTriangle newTriangle = DefineTriangle(ab, ac, bc);
+                    newTriangle.OrderNodes();
                 }
 
                 /// <summary>
-                /// Case: TWO nodes INSIDE, ONE node OUTSIDE; intersection nodes and inside nodes form a four sided polygon, need to triangulate the polygon
+                /// Case: (TWO nodes INSIDE, ONE node OUTSIDE): intersection nodes and inside nodes form a four sided polygon; triangulate the polygon
                 ///    ↑
                 ///  outside
                 ///
@@ -578,88 +401,97 @@ namespace Graph2D
                 ///  inside
                 ///     ↓
                 /// </summary>
-                else if (insideIndices.Count == 2)
+                else
                 {
+                    // Rename ref to ONLY outside node
+                    GraphNode outsideNode = outsideNodes[0];
+                    deadNodes.Add(outsideNode);                 // Mark outside node for later removal
+
                     // Remember the intersection nodes so they can be triangulated
                     GraphNode[] intersectionNodes = new GraphNode[2];
-                    int index = 0;
-
-                    // Get list of inside nodes by excluding outside node from list
-                    int outsideNodeIndex = 3 - (insideIndices[0] + insideIndices[1]);
-                    GraphNode outsideNode = subjectTriangle.Nodes[outsideNodeIndex];
-                    deadNodes.Add(outsideNode);                     // Mark for later removal
-                    List<GraphNode> insideNodes = subjectTriangle.Nodes.Where(n => n != outsideNode).ToList();
+                    int intersectionNodeIndex = 0;
 
                     foreach (GraphNode insideNode in insideNodes)
                     {
-                        // Get ref to edge that has been clipped, check if this edge has already been handled
+                        // IF EDGE HAS ALREADY BEEN CLIPPED... (by a different triangle)
                         GraphEdge clippedEdge = insideNode.GetEdge(outsideNode);
                         if (oldNewEdgeDict.ContainsKey(clippedEdge))
                         {
                             // Get the new edges intersection node, add to array
                             GraphNode intersectionNode = oldNewEdgeDict[clippedEdge].GetOther(insideNode);
-                            intersectionNodes[index++] = intersectionNode;
+                            intersectionNodes[intersectionNodeIndex++] = intersectionNode;
                         }
 
-                        else
+                        else // EDGE HAS NOT BEEN CLIPPED YET...
                         {
                             // Calculate the intersection of clip edge and tri-edge
                             Vector2 intersection = MathExtension.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
 
                             // Create node at intersection, remember node
                             GraphNode intersectionNode = CreateNode(intersection);
-                            intersectionNodes[index++] = intersectionNode;
+                            intersectionNodes[intersectionNodeIndex++] = intersectionNode;
 
-                            // Create an edge from the insideNode to the intersectionNode
+                            // Create an edge from the insideNode to the intersectionNode add to oldNewEdgeDict
                             GraphEdge insideToIntersectionEdge = CreateEdge(insideNode, intersectionNode);
-
-                            // Add old and new edge refs to dict
                             oldNewEdgeDict.Add(clippedEdge, insideToIntersectionEdge);
                         }
                     }
 
-                    //                  .   /\
-                    //                 __`./__\___ clip edge
-                    //                    /`.  \
-                    //     insideSide    /   `. \  intersectionSide
-                    //                  /______`.\
-                    //                           `. bisecting edge
-
-                    //                      /\   ,
-                    //                  ___/__\,'__ clip edge
-                    //                    /  ,'\
-                    // intersectionSide  / ,'   \  insideSide
-                    //                  /,'______\
-                    //                 ,'     
-                    // bisecting edge     
+                    /// <summary>
+                    /// Cropping the triangle's edges has created a 4 sided hole: need to triangulate the hole.
+                    /// 
+                    ///                                deleted node
+                    ///                                     /\
+                    ///                                 ___/__\___ clip edge
+                    ///                                   /    \
+                    ///                                  / hole \
+                    ///                                 /________\
+                    /// 
+                    /// The hole is triangulated by creating an edge that bisects the hole from one intersection node to the non-adjacent inside node,
+                    /// as in one of the diagrams below. The following calculations are used to correctly identify edges.
+                    /// 
+                    ///                  .   /\                               /\   ,'
+                    ///               ____`./__\____     clip edge      _____/__\,'____ 
+                    ///                    /`.  \                           /  ,'\
+                    ///     insideSide    /   `. \    intersectionSide     / ,'   \    insideSide
+                    ///                  /______`.\                       /,'______\
+                    ///                           `.                    ,'
+                    ///                             `. bisecting edge ,'
+                    /// </summary>   
 
                     // Add an edge between intersection nodes, creates a four sided polygon
                     GraphEdge intersectionEdge = CreateEdge(intersectionNodes[0], intersectionNodes[1]);
-                    GraphEdge insideEdge = insideNodes[0].GetEdge(insideNodes[1]);
+                    GraphEdge insideEdge = insideNodes[0].GetEdge(insideNodes[1]);      // Inside edge already exists
 
-                    // Create an edge that divides the polygon into two triangles
+                    // Edge that wil divide the hole into two triangles
                     GraphEdge bisectingEdge;
+
+                    // Edge references for identifying the above edges
                     GraphEdge intersectionSideEdge;
                     GraphEdge insideSideEdge;
 
-                    // We want to create an edge between an intersection node and a non-adjacent inside node
-                    if (intersectionNodes[0].HasEdge(insideNodes[0]))               // If there is an edge, the nodes are adjacent   
+                    // IF THERE IS AN EDGE, THE NODES ARE ADJACENT... 
+                    if (intersectionNodes[0].HasEdge(insideNodes[0]))                
                     {
+                        // Bisecting edge connects non-adjacent edges
                         bisectingEdge = CreateEdge(intersectionNodes[0], insideNodes[1]);
+
+                        // Identifying the other edges
                         intersectionSideEdge = intersectionNodes[1].GetEdge(insideNodes[1]);
                         insideSideEdge = intersectionNodes[0].GetEdge(insideNodes[0]);
-
-                        // Intersection Side triangle node order: 
                     }
 
-                    else
+                    else // NO EDGE, THE NODES ARE NOT ADJACENT...
                     {
+                        // Bisecting edge connects non-adjacent edges
                         bisectingEdge = CreateEdge(intersectionNodes[0], insideNodes[0]);
+
+                        // Identifying the other edges
                         intersectionSideEdge = intersectionNodes[1].GetEdge(insideNodes[0]);
                         insideSideEdge = intersectionNodes[0].GetEdge(insideNodes[1]);
                     }
 
-                    // Create two triangles from four sided polygon
+                    // Create two triangles from four sided hole
                     GraphTriangle intersectionSideTriangle = DefineTriangle(bisectingEdge, intersectionEdge, intersectionSideEdge);
                     intersectionSideTriangle.OrderNodes();
 
@@ -668,7 +500,7 @@ namespace Graph2D
                 }
             }
 
-            // Remove triangles outside the crop edge
+            // Remove nodes outside the crop edge
             foreach (GraphNode deadNode in deadNodes)
                 Destroy(deadNode);
         }

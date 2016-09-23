@@ -29,13 +29,21 @@ public class BreakTest : MonoBehaviour
         Mesh mesh = GetComponent<MeshFilter>().mesh;
         foreach (Graph cell in cells)
         {
-            Mesh clippedMesh = MeshClipper.Clip(mesh, cell);
-
-            if (clippedMesh != null)                // If mesh is not completely cropped
+            if (cell.Closed())
             {
-                GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
-                chunk.GetComponent<MeshFilter>().mesh = clippedMesh;
+                Graph clippedGraph = MeshClipper.ClipAsGraph(mesh, cell);
+                Mesh clippedMesh = clippedGraph.ToMesh("ClippedMesh");
+
+                // If mesh is not completely cropped
+                if (clippedGraph != null)
+                {
+                    GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
+                    chunk.GetComponent<MeshFilter>().mesh = clippedMesh;
+                    //chunk.GetComponent<PolygonCollider2D>().points = clippedGraph.OutsideNodes().Select(n => n.Vector).ToArray();
+                }
             }
         }
+
+        gameObject.SetActive(false);
     }
 }

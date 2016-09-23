@@ -9,6 +9,15 @@ namespace Graph2D
     {
         public static Mesh Clip(Mesh mesh, Graph convexClipShape)
         {
+            Graph meshGraph = ClipAsGraph(mesh, convexClipShape);
+
+            // Return clipped mesh
+            Mesh clippedMesh = meshGraph.ToMesh("Clipped Mesh");
+            return clippedMesh;
+        }
+
+        public static Graph ClipAsGraph(Mesh mesh, Graph convexClipShape)
+        {
             // Create graph that mirrors mesh
             Graph meshGraph = new Graph(mesh);
 
@@ -25,9 +34,7 @@ namespace Graph2D
                 meshGraph.Clip(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, inside);
             }
 
-            // Return clipped mesh
-            Mesh clippedMesh = meshGraph.ToMesh("Clipped Mesh");
-            return clippedMesh;
+            return meshGraph;
         }
     }
 }
