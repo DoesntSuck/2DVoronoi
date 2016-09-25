@@ -24,12 +24,13 @@ public class BreakTest : MonoBehaviour
         Vector2[] nuclei = children.Select(c => (Vector2)c.position).ToArray();
 
         // Each point converts to the nuclei of a Voronoi cell
-        List<Graph> cells = VoronoiTessellation.Create(nuclei, false);
+        VoronoiTessellation voronoi = new VoronoiTessellation();
+        voronoi.Insert(nuclei);
 
         Mesh mesh = GetComponent<MeshFilter>().mesh;
-        for (int i = 3; i < cells.Count; i++)
+        for (int i = 3; i < voronoi.Cells.Count; i++)
         {
-            Graph clippedGraph = MeshClipper.ClipAsGraph(mesh, cells[i]);
+            Graph clippedGraph = MeshClipper.ClipAsGraph(mesh, voronoi.Cells[i]);
             Mesh clippedMesh = clippedGraph.ToMesh("ClippedMesh");
 
             // If mesh is not completely cropped

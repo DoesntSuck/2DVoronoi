@@ -10,6 +10,26 @@ namespace UnityEngine
     /// </summary>
     public static class MathExtension
     {
+        public static float DistanceFromIncircleCentreToEquilateralVertex(Circle incircle)
+        {
+            // Length of side of equilateral triangle with 'incircle'
+            float sideLength = EquilateralSideLength((float)incircle.Radius);
+
+            // a² + b ² =  c²
+            float a = Mathf.Pow((sideLength * 0.5f), 2);
+            float b = Mathf.Pow((float)incircle.Radius, 2);
+
+            // Distance from incircle centre to any vert in the equilateral triangle containing incircle
+            float distance = Mathf.Sqrt(a + b);
+            return distance;
+        }
+
+        public static float EquilateralSideLength(float incircleRadius)
+        {
+            // The side length of an eqilateral triangle with the given incircle radius
+            return incircleRadius / ((1f / 6f) * Mathf.Sqrt(3));
+        }
+
         public static Bounds CalculateBounds(IEnumerable<Vector2> vectors)
         {
             // Maximal and minimal vectors

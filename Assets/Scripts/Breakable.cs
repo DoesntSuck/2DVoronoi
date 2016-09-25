@@ -27,10 +27,11 @@ public class Breakable : MonoBehaviour
         Vector2[] nuclei = RandomNuclei(impactPosition, impactForce, NucleiCount);
 
         // Each point converts to the nuclei of a Voronoi cell
-        List<Graph> cells = VoronoiTessellation.Create(nuclei);
+        VoronoiTessellation voronoi = new VoronoiTessellation(MathExtension.BoundingCircle(nuclei));
+        voronoi.Insert(nuclei);
 
         Mesh mesh = GetComponent<MeshFilter>().mesh;
-        foreach (Graph cell in cells)
+        foreach (Graph cell in voronoi.Cells)
         {
             Mesh clippedMesh = MeshClipper.Clip(mesh, cell);
 

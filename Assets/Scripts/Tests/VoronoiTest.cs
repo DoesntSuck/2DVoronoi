@@ -11,7 +11,7 @@ namespace Assets
         public Color Colour = Color.cyan;
 
         private List<Transform> children;
-        private List<Graph> cells;
+        private VoronoiTessellation voronoi;
 
         void Awake()
         {
@@ -25,8 +25,9 @@ namespace Assets
         {
             // Create Voronoi cells from child transform positions as nuclei
             Vector2[] nuclei = children.Select(c => (Vector2)c.position).ToArray();
-            cells = VoronoiTessellation.Create(nuclei, RemoveSuperTriangle);
-            int i = 0;
+
+            voronoi = new VoronoiTessellation(MathExtension.BoundingCircle(nuclei));
+            voronoi.Insert(nuclei);
         }
 
         void OnDrawGizmos()
@@ -41,11 +42,11 @@ namespace Assets
                 // Draw each nuclei
                 GraphDebug.DrawVectors(nuclei);
 
-                if (cells != null)
+                if (voronoi != null)
                 {
                     GraphDebug.EdgeColour = Colour;
 
-                    foreach (Graph cell in cells)
+                    foreach (Graph cell in voronoi.Cells)
                         GraphDebug.DrawEdges(cell.Edges);
                 }
             }

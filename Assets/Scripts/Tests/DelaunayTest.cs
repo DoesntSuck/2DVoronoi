@@ -14,7 +14,7 @@ namespace Assets
         public bool Circumcircles;
 
         private List<Transform> children;
-        private Graph triangulation;
+        private DelaunayTriangulation triangulation;
         private List<GraphTriangle> hoveredTriangles;
 
         void Awake()
@@ -31,20 +31,17 @@ namespace Assets
             // Get transform positions
             Vector2[] vectors = children.Select(c => (Vector2)c.position).ToArray();
 
-            // Create super triangle graph so can use super triangle nodes for polygon collider
-            triangulation = DelaunayTriangulation.CreateSuperTriangleGraph(vectors);
-            GraphNode[] superTriangle = triangulation.Nodes.ToArray();
+            triangulation = new DelaunayTriangulation(MathExtension.BoundingCircle(vectors));
 
             // Set collider points to the super triangle vectors
-            GetComponent<PolygonCollider2D>().points = superTriangle.Select(n => n.Vector).ToArray();
+            GetComponent<PolygonCollider2D>().points = triangulation.SuperTriangle.Select(n => n.Vector).ToArray();
 
             // Insert vectors into triangulation
-            DelaunayTriangulation.Insert(triangulation, vectors);
+            triangulation.Insert(vectors);
 
             if (RemoveSuperTriangle)
             {
-                foreach (GraphNode node in superTriangle)
-                    triangulation.Destroy(node);
+                triangulation.RemoveSuperTriangle();
             }
         }
 
@@ -64,7 +61,7 @@ namespace Assets
                 if (triangulation != null)
                 {
                     GraphDebug.Circumcircles = Circumcircles;
-                    GraphDebug.DrawGraph(triangulation);
+                    GraphDebug.DrawGraph(triangulation.Graph);
 
                     // Highlight the triangles that are moused over
                     if (hoveredTriangles != null)
@@ -93,7 +90,7 @@ namespace Assets
                     List<GraphTriangle> containingTriangles = new List<GraphTriangle>(); ;
 
                     // Check each triangle to see if it if the pointer is inside it
-                    foreach (GraphTriangle triangle in triangulation.Triangles)
+                    foreach (GraphTriangle triangle in triangulation.Graph.Triangles)
                     {
                         if (MathExtension.TriangleContains(hit.point, triangle.Nodes[0].Vector, triangle.Nodes[1].Vector, triangle.Nodes[2].Vector))
                             containingTriangles.Add(triangle);
