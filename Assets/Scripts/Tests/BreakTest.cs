@@ -27,23 +27,20 @@ public class BreakTest : MonoBehaviour
         List<Graph> cells = VoronoiTessellation.Create(nuclei, false);
 
         Mesh mesh = GetComponent<MeshFilter>().mesh;
-        foreach (Graph cell in cells)
+        for (int i = 3; i < cells.Count; i++)
         {
-            if (cell.Closed())
-            {
-                Graph clippedGraph = MeshClipper.ClipAsGraph(mesh, cell);
-                Mesh clippedMesh = clippedGraph.ToMesh("ClippedMesh");
+            Graph clippedGraph = MeshClipper.ClipAsGraph(mesh, cells[i]);
+            Mesh clippedMesh = clippedGraph.ToMesh("ClippedMesh");
 
-                // If mesh is not completely cropped
-                if (clippedGraph != null)
-                {
-                    GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
-                    chunk.GetComponent<MeshFilter>().mesh = clippedMesh;
-                    //chunk.GetComponent<PolygonCollider2D>().points = clippedGraph.OutsideNodes().Select(n => n.Vector).ToArray();
-                }
+            // If mesh is not completely cropped
+            if (clippedGraph != null)
+            {
+                GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
+                chunk.GetComponent<MeshFilter>().mesh = clippedMesh;
+                chunk.GetComponent<PolygonCollider2D>().points = clippedGraph.OutsideNodes().Select(n => n.Vector).ToArray();
             }
         }
 
-        gameObject.SetActive(false);
+        GetComponent<MeshRenderer>().enabled = false;
     }
 }
