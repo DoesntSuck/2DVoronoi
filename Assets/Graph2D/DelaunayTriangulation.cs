@@ -82,7 +82,7 @@ namespace Graph2D
         /// </summary>
         public void Insert(Vector2 vector)
         {
-            if (MathExtension.TriangleContains(vector, SuperTriangle[0].Vector, SuperTriangle[1].Vector, SuperTriangle[2].Vector));
+            if (!MathExtension.TriangleContains(vector, SuperTriangle[0].Vector, SuperTriangle[1].Vector, SuperTriangle[2].Vector))
                 Debug.Log("Outside: " + vector);
 
             // Add new node to graph

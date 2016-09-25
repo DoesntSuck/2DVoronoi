@@ -24,7 +24,7 @@ public class BreakTest : MonoBehaviour
         Vector2[] nuclei = children.Select(c => (Vector2)c.position).ToArray();
 
         // Each point converts to the nuclei of a Voronoi cell
-        VoronoiTessellation voronoi = new VoronoiTessellation();
+        VoronoiTessellation voronoi = new VoronoiTessellation(MathExtension.BoundingCircle(nuclei));
         voronoi.Insert(nuclei);
 
         Mesh mesh = GetComponent<MeshFilter>().mesh;
