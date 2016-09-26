@@ -28,9 +28,9 @@ public class BreakTest : MonoBehaviour
         voronoi.Insert(nuclei);
 
         Mesh mesh = GetComponent<MeshFilter>().mesh;
-        for (int i = 3; i < voronoi.Cells.Count; i++)
+        foreach (Graph cell in voronoi.Cells)
         {
-            Graph clippedGraph = MeshClipper.ClipAsGraph(mesh, voronoi.Cells[i]);
+            Graph clippedGraph = MeshClipper.ClipAsGraph(mesh, cell);
             Mesh clippedMesh = clippedGraph.ToMesh("ClippedMesh");
 
             // If mesh is not completely cropped

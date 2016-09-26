@@ -7,6 +7,8 @@ namespace Graph2D
 {
     public class VoronoiTessellation
     {
+        private List<Graph> cells;
+
         /// <summary>
         /// A new Voronoi tesellation with an arbitrarily large bounding triangle.
         /// </summary>
@@ -32,8 +34,7 @@ namespace Graph2D
         /// <summary>
         /// The cells in this Voronoi Tesellation. Calculated as the dual graph of the Delaunay triangulation
         /// </summary>
-        public List<Graph> Cells { get; private set; }
-
+        public List<Graph> Cells { get { return cells.Where(c => c.Edges.Count > 2 && c.Nodes.Count > 2).ToList(); } }
         /// <summary>
         /// Inserts the given nuclei into this Voronoi tesellation, recaclulating the nuclei cells.
         /// </summary>
@@ -68,13 +69,13 @@ namespace Graph2D
             // TODO: Where a cell edge intersects with supertriangle edge, truncate cell edge
 
             // Convert to Voronoi Cells
-            Cells = new List<Graph>();
+            cells = new List<Graph>();
 
             foreach (GraphNode node in Triangulation.Graph.Nodes)
             {
                 // Create a new voronoi cell, add to list of cells
                 Graph cell = new Graph() { Nuclei = node.Vector };
-                Cells.Add(cell);
+                cells.Add(cell);
 
                 // Dictionary to hold association between triangles in delaunay and circumcentre nodes in voronoi cell
                 Dictionary<GraphTriangle, GraphNode> triNodeDict = new Dictionary<GraphTriangle, GraphNode>();

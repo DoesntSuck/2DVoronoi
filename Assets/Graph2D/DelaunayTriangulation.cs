@@ -36,11 +36,12 @@ namespace Graph2D
         {
             // Distance from incircle centre to the verts on the containing equilateral triangle
             float d = MathExtension.DistanceFromIncircleCentreToEquilateralVertex(contentBounds);
+            float adjustedD = d * 1.5f;
 
             // Direction from content bounds centre
-            Vector2 topCentre = Vector2.up * d;
-            Vector2 bottomLeft = (Vector2.down + Vector2.left) * d;
-            Vector2 bottomRight = (Vector2.down + Vector2.right) * d;
+            Vector2 topCentre = Vector2.up * adjustedD;
+            Vector2 bottomLeft = (Vector2.down + Vector2.left) * adjustedD;
+            Vector2 bottomRight = (Vector2.down + Vector2.right) * adjustedD;
 
             // Store in an array to pass to Initialize method
             Vector2[] superTriangle = new Vector2[] { topCentre, bottomLeft, bottomRight };
