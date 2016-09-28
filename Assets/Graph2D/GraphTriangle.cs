@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Graph2D
@@ -123,6 +122,23 @@ namespace Graph2D
         }
 
         /// <summary>
+        /// Checks whether this triangle and the given triangle share a node
+        /// </summary>
+        public bool SharesNode(GraphTriangle other)
+        {
+            // Compare each edge
+            foreach (GraphNode node in Nodes)
+            {
+                // Check if triangles share edge
+                if (other.Contains(node))
+                    return true;
+            }
+
+            // No edges were shared
+            return false;
+        }
+
+        /// <summary>
         /// Checks whether this triangle and the given triangle share an edge
         /// </summary>
         public bool SharesEdge(GraphTriangle other)
@@ -137,21 +153,6 @@ namespace Graph2D
 
             // No edges were shared
             return false;
-        }
-
-        public IEnumerable<GraphNode> SameSideNodes(Vector2 edgePoint1, Vector2 edgePoint2, float side)
-        {
-            return Nodes.Where(n => MathExtension.Side(edgePoint1, edgePoint2, n.Vector) == side);
-        }
-
-        public IEnumerable<GraphNode> OpposideSideNodes(Vector2 edgePoint1, Vector2 edgePoint2, float side)
-        {
-            return Nodes.Where(n => MathExtension.Side(edgePoint1, edgePoint2, n.Vector) == -side);
-        }
-
-        public IEnumerable<GraphNode> OnEdgeNodes(Vector2 edgePoint1, Vector2 edgePoint2)
-        {
-            return Nodes.Where(n => MathExtension.Side(edgePoint1, edgePoint2, n.Vector) == 0);
         }
 
         public override string ToString()
