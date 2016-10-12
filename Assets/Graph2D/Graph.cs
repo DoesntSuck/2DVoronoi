@@ -150,6 +150,22 @@ namespace Graph2D
             return DefineTriangle(edge, otherEdges[1], otherEdges[0]);
         }
 
+        public GraphTriangle DefineTriangle(GraphNode a, GraphNode b, GraphNode c)
+        {
+            GraphTriangle triangle = new GraphTriangle(a.GetEdge(b), a.GetEdge(c), b.GetEdge(c));
+            Triangles.Add(triangle);
+
+            // Add triangle ref to each of the triangle's nodes
+            foreach (GraphNode node in triangle.Nodes)
+                node.AddTriangle(triangle);
+
+            // Add triangle ref to each of the triangle's edges
+            foreach (GraphEdge edge in triangle.Edges)
+                edge.AddTriangle(triangle);
+
+            return triangle;
+        }
+
         /// <summary>
         /// Adds a triangle connecting the given nodes. Will throw an exception if the given nodes do not form a triangle 
         /// </summary>
@@ -238,6 +254,33 @@ namespace Graph2D
 
             // No triangle contains ALL of the given nodes
             return false;
+        }
+
+        // Keys = node in THIS graph - Values = node in OTHER graph
+        public void Stitch(Graph other, Dictionary<GraphNode, GraphNode> stitchNodes)
+        {
+            Nodes.AddRange(other.Nodes.Except(stitchNodes.Values));                                       // Add non-duplicate nodes
+            Edges.AddRange(other.Edges.Where(e => e.Nodes.Intersect(stitchNodes.Values).Count() != 2));   // Add non-duplicate edges
+            Triangles.AddRange(other.Triangles);                                                          // Add all triangles
+
+            foreach (KeyValuePair<GraphNode, GraphNode> stitchNodePair in stitchNodes)
+            {
+                // Each edge attached to otherStitchNode needs to be instead attached to stitchNode
+                foreach (GraphEdge attachedEdge in stitchNodePair.Value.Edges)
+                {
+                    // Get the index of otherStitchNode in its attached edge's array of nodes
+                    int index = Array.FindIndex(attachedEdge.Nodes, n => n == stitchNodePair.Value);
+                    attachedEdge.Nodes[index] = stitchNodePair.Key;     // Replace the element at that index with stitchNode
+                }
+
+                // Each triangle attached to otherStitchNode needs to be instead attached to stitchNode
+                foreach (GraphTriangle attachedTriangle in stitchNodePair.Value.Triangles)
+                {
+                    // Get the index of otherStitchNode in its attached edge's array of nodes
+                    int index = Array.FindIndex(attachedTriangle.Nodes, n => n == stitchNodePair.Value);
+                    attachedTriangle.Nodes[index] = stitchNodePair.Key;     // Replace the element at that index with stitchNode
+                }
+            }
         }
 
         public List<GraphNode> OutsideNodes()
