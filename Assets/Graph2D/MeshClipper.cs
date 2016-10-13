@@ -7,41 +7,59 @@ namespace Graph2D
 {
     public class MeshClipper
     {
-        public Mesh Mesh { get; private set; }
+        private Graph outside;
+        private Graph inside;
+        private List<Graph> chunks = new List<Graph>();
 
-        private Graph clippedMeshGraph;
-
-        // Graph to contain the portion of the graph inside the given edge
-        Graph insideGraph = new Graph();
-
-        // Associates nodes with their duplicate in insideGraph, so that shared nodes between triangles can be maintained
-        Dictionary<GraphNode, GraphNode> interGraphDuplicateNodes;
-
-        // Associates edges with their new, clipped version, so each edge is only truncated once even if it is shared by triangles
-        Dictionary<GraphEdge, GraphEdge> truncatedEdgeCatalogue;
-
-        // Associates nodes from the outside and inside graphs that have been duplicated along the truncation edge
-        Dictionary<GraphNode, GraphNode> stitchNodes;
+        private Dictionary<GraphNode, GraphNode> interGraphDuplicateNodes; // Associates nodes with their duplicate in insideGraph, so that shared nodes between triangles can be maintained
+        private Dictionary<GraphEdge, GraphEdge> truncatedEdgeCatalogue; // Associates edges with their new, clipped version, so each edge is only truncated once even if it is shared by triangles
+        private Dictionary<GraphNode, GraphNode> splitNodes = new Dictionary<GraphNode, GraphNode>();// Associates nodes from the outside and inside graphs that have been duplicated along the truncation edge
 
         public MeshClipper(Mesh mesh)
         {
-            Mesh = mesh;
-
-            clippedMeshGraph = new Graph(mesh);
+            outside = new Graph(mesh);
         }
 
         public void Clip(Graph convexClipShape, Vector2 nuclei)
         {
-            // TODO: Maintain dict of nodes: matches truncation points from outside and inside graphs; as well as, onEdgeNodes from outside graph with their duplicate in inside graph
-
             // Clip once per graph edge
             foreach (GraphEdge clipEdge in convexClipShape.Edges)
             {
                 // Which side of edge is counted as being inside?
-                float inside = MathExtension.Side(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, nuclei);
+                float insideSide = MathExtension.Side(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, nuclei);
 
                 // Clip edges that aren't inside of line
-                Graph chunk = Split(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, inside);
+                Split(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, insideSide);
+                chunks.Add(inside);
+            }
+
+            // Remove the last chunk: its the inside chunk
+            chunks.RemoveAt(chunks.Count - 1);
+        }
+
+        private void Stitch()
+        {
+            // Index begins at second to last chunk because last chunk's split nodes connect to the inside chunk (aka they aren't getting re-attached)
+            int chunkIndex = chunks.Count - 2;
+            Dictionary<GraphNode, GraphNode> chunkSplitNodes = new Dictionary<GraphNode, GraphNode>();
+
+            // TODO: Iterate backwards
+            foreach (KeyValuePair<GraphNode, GraphNode> splitNode in splitNodes)
+            {
+                //
+                if (chunks[chunkIndex].Nodes.Contains(splitNode.Key))
+                {
+                    // Add kvp to chunksSplitNodes dict
+                    // keep looping backwards until getting to nodes from next graph
+                }
+
+                //check here for getting to node from next graph
+                else if (true)
+                {
+                    // Tell chunkIndex - 1 graph to stitch to chunkIndex graph
+                    // TODO: stitch method needs to be able to handle one graph not having the split node
+                    // decrement chunkIndex
+                }
             }
         }
 
@@ -49,23 +67,22 @@ namespace Graph2D
         /// Splits the graph along the given edge. The original graph is edited to reflect the split. A second graph containing the portion
         /// of the original graph that is inside the given edge is returned.
         /// </summary>
-        public Graph Split(Vector2 clipEdgePoint1, Vector2 clipEdgePoint2, float inside)
+        public void Split(Vector2 clipEdgePoint1, Vector2 clipEdgePoint2, float insideSide)
         {
             // Graph to contain the portion of the meshGraph inside the given edge
-            insideGraph = new Graph();
+            inside = new Graph();
 
             interGraphDuplicateNodes = new Dictionary<GraphNode, GraphNode>();         // Associates nodes with duplicates in insideGraph, so that nodes shared between triangles can be maintained
-            truncatedEdgeCatalogue = new Dictionary<GraphEdge, GraphEdge>(); // Associates edges with their clipped version, so each edge is truncated only once even if it is shared by triangles
-            stitchNodes = new Dictionary<GraphNode, GraphNode>();
+            truncatedEdgeCatalogue = new Dictionary<GraphEdge, GraphEdge>();           // Associates edges with their clipped version, so each edge is truncated only once even if it is shared by triangles
 
             // Iterate through every triangle in Graph seeing if it has been clipped
-            List<GraphTriangle> triangles = clippedMeshGraph.Triangles.ToList();        // Copy collection so can alter original whilst iterating
+            List<GraphTriangle> triangles = outside.Triangles.ToList();        // Copy collection so can alter original whilst iterating
             foreach (GraphTriangle triangle in triangles)
             {
                 // Get nodes, inside, outside, and on the clip edge
-                GraphNode[] insideNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == inside).ToArray();
+                GraphNode[] insideNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == insideSide).ToArray();
                 GraphNode[] onEdgeNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == 0).ToArray();
-                GraphNode[] outsideNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == -inside).ToArray();
+                GraphNode[] outsideNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == -insideSide).ToArray();
 
                 // No intersection
                 if (outsideNodes.Length == 0)   // Triangle is INSIDE the clip edge
@@ -86,14 +103,14 @@ namespace Graph2D
                     {
                         // Define new triangle in THIS graph
                         // TODO: Remove old triangle
-                        clippedMeshGraph.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
+                        outside.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
 
                         // Add nodes / edges / triangle to split graph
                         GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
 
                         // REMEMBER stitch line node duplicates
-                        stitchNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
-                        stitchNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
+                        splitNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
+                        splitNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
                     }
 
                     /// <summary>
@@ -114,8 +131,8 @@ namespace Graph2D
                         GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
 
                         // Stitch nodes
-                        stitchNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
-                        stitchNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
+                        splitNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
+                        splitNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
                     }
 
                     /// <summary>
@@ -130,23 +147,21 @@ namespace Graph2D
                     {
                         // Create triangle in THIS graph (outside, intersection, intersection)
                         // TODO: remove triangle
-                        clippedMeshGraph.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
+                        outside.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
 
                         // Triangulate hole in insideGraph
                         GraphNode[] insideTriangleNodes = TriangulateHoleInInsideGraph(intersectionNodes, insideNodes);
 
                         // Stitch nodes
-                        stitchNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
-                        stitchNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
+                        splitNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
+                        splitNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
                     }
                 }
             }
 
             // TODO: Remove all nodes from oldNewNodesDict.Keys() from current graph -> maybe dict doesn't contain all necessary nodes
             foreach (GraphNode node in interGraphDuplicateNodes.Keys)
-                clippedMeshGraph.Destroy(node);
-
-            return insideGraph;
+                outside.Destroy(node);
         }
 
         private GraphNode GetOrCreateInsideNode(GraphNode clippedMeshGraphNode)
@@ -155,7 +170,7 @@ namespace Graph2D
                 return interGraphDuplicateNodes[clippedMeshGraphNode];
             else
             {
-                GraphNode node = insideGraph.CreateNode(clippedMeshGraphNode.Vector);
+                GraphNode node = inside.CreateNode(clippedMeshGraphNode.Vector);
                 interGraphDuplicateNodes.Add(clippedMeshGraphNode, node);
                 return node;
             }
@@ -194,18 +209,18 @@ namespace Graph2D
                         Vector2 intersection = MathExtension.KnownIntersection(clipEdgePoint1, clipEdgePoint2, insideNode.Vector, outsideNode.Vector);
 
                         // Create node at intersection, remember node
-                        GraphNode intersectionNode = clippedMeshGraph.CreateNode(intersection);
+                        GraphNode intersectionNode = outside.CreateNode(intersection);
                         intersectionNodes[index++] = intersectionNode;
 
                         // Create an edge from the insideNode to the intersectionNode, add to truncatedEdgeCatalogue
-                        GraphEdge insideToIntersectionEdge = clippedMeshGraph.CreateEdge(insideNode, intersectionNode);
+                        GraphEdge insideToIntersectionEdge = outside.CreateEdge(insideNode, intersectionNode);
                         truncatedEdgeCatalogue.Add(clippedEdge, insideToIntersectionEdge);
                     }
                 }
             }
 
             // Create new edge between intersection points
-            clippedMeshGraph.CreateEdge(intersectionNodes[0], intersectionNodes[1]);
+            outside.CreateEdge(intersectionNodes[0], intersectionNodes[1]);
 
             return intersectionNodes;
         }
@@ -218,12 +233,12 @@ namespace Graph2D
             GraphNode insideC = GetOrCreateInsideNode(c);
 
             // Get or create edges
-            GraphEdge ab = insideA.HasEdge(insideB) ? insideA.GetEdge(insideB) : insideGraph.CreateEdge(insideA, insideB);
-            GraphEdge ac = insideA.HasEdge(insideC) ? insideA.GetEdge(insideC) : insideGraph.CreateEdge(insideA, insideC);
-            GraphEdge bc = insideB.HasEdge(insideC) ? insideB.GetEdge(insideC) : insideGraph.CreateEdge(insideB, insideC);
+            GraphEdge ab = insideA.HasEdge(insideB) ? insideA.GetEdge(insideB) : inside.CreateEdge(insideA, insideB);
+            GraphEdge ac = insideA.HasEdge(insideC) ? insideA.GetEdge(insideC) : inside.CreateEdge(insideA, insideC);
+            GraphEdge bc = insideB.HasEdge(insideC) ? insideB.GetEdge(insideC) : inside.CreateEdge(insideB, insideC);
 
             // Define triangle
-            GraphTriangle newTri = insideGraph.DefineTriangle(ab, ac, bc);
+            GraphTriangle newTri = inside.DefineTriangle(ab, ac, bc);
 
             // Return new triangle nodes as array in SAME ORDER as was given to this method
             return new GraphNode[] { insideA, insideB, insideC };
@@ -237,11 +252,11 @@ namespace Graph2D
                 if (!holeNodes.First().HasEdge(node)) oppositeNode = node;
 
             // Create edge between first node and opposite node
-            GraphEdge intersectingEdge = clippedMeshGraph.CreateEdge(holeNodes.First(), oppositeNode);
+            GraphEdge intersectingEdge = outside.CreateEdge(holeNodes.First(), oppositeNode);
 
             // Create triangle between intersecting edge and other nodes in enumeration
             foreach (GraphNode node in holeNodes.Where(n => n != holeNodes.First() && n != oppositeNode))   // Check all nodes except first and opposite
-                clippedMeshGraph.CreateTriangle(intersectingEdge, node);
+                outside.CreateTriangle(intersectingEdge, node);
         }
 
         private GraphNode[] TriangulateHoleInInsideGraph(GraphNode[] intersectionNodes, GraphNode[] insideNodes)
@@ -253,15 +268,15 @@ namespace Graph2D
             GraphNode d = GetOrCreateInsideNode(insideNodes[1]);
 
             // Create edges where necessary
-            GraphEdge insideAB = insideGraph.CreateEdge(a, b);
-            GraphEdge insideAC = a.HasEdge(c) ? a.GetEdge(c) : insideGraph.CreateEdge(a, c);
-            GraphEdge insideAD = a.HasEdge(d) ? a.GetEdge(d) : insideGraph.CreateEdge(a, d);
-            GraphEdge insideBD = b.HasEdge(d) ? b.GetEdge(d) : insideGraph.CreateEdge(b, d);
-            GraphEdge insideCD = c.HasEdge(d) ? c.GetEdge(d) : insideGraph.CreateEdge(c, d);
+            GraphEdge insideAB = inside.CreateEdge(a, b);
+            GraphEdge insideAC = a.HasEdge(c) ? a.GetEdge(c) : inside.CreateEdge(a, c);
+            GraphEdge insideAD = a.HasEdge(d) ? a.GetEdge(d) : inside.CreateEdge(a, d);
+            GraphEdge insideBD = b.HasEdge(d) ? b.GetEdge(d) : inside.CreateEdge(b, d);
+            GraphEdge insideCD = c.HasEdge(d) ? c.GetEdge(d) : inside.CreateEdge(c, d);
 
             // Define triangles
-            insideGraph.DefineTriangle(insideAB, insideAD, insideBD);
-            insideGraph.DefineTriangle(insideAD, insideAC, insideCD);
+            inside.DefineTriangle(insideAB, insideAD, insideBD);
+            inside.DefineTriangle(insideAD, insideAC, insideCD);
 
             // Return nodes from inside graph in the order they were given to this method
             return new GraphNode[] { a, b, c, d };
