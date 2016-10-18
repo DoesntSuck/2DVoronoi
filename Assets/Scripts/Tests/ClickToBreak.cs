@@ -16,6 +16,7 @@ namespace Assets
         public float Radius;
         public int ChunkCount;
 
+        private MeshClipper clipper;
         private VoronoiTessellation voronoi;
         private MeshFilter meshFilter;
         private Vector3 clickPosition;
@@ -25,6 +26,11 @@ namespace Assets
         {
             meshFilter = GetComponent<MeshFilter>();
             collider = GetComponent<Collider2D>();
+        }
+
+        void Start()
+        {
+            clipper = new MeshClipper(GetComponent<MeshFilter>().mesh);
         }
 
         void OnMouseDown()
@@ -76,7 +82,7 @@ namespace Assets
 
             foreach (Graph clipCell in voronoi.Cells)
             {
-                Graph clippedGraph = MeshClipper.ClipAsGraph(meshFilter.mesh, clipCell);
+                Graph clippedGraph = clipper.Clip(clipCell, clipCell.Nuclei);
 
                 GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
                 chunk.GetComponent<MeshFilter>().mesh = clippedGraph.ToMesh("Clipped Mesh");

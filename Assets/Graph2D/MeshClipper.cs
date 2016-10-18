@@ -9,18 +9,19 @@ namespace Graph2D
     {
         private Graph outside;
         private Graph inside;
-        private List<Graph> chunks = new List<Graph>();
+
+        List<SplitGraph> chunks;
 
         private Dictionary<GraphNode, GraphNode> interGraphDuplicateNodes; // Associates nodes with their duplicate in insideGraph, so that shared nodes between triangles can be maintained
         private Dictionary<GraphEdge, GraphEdge> truncatedEdgeCatalogue; // Associates edges with their new, clipped version, so each edge is only truncated once even if it is shared by triangles
-        private Dictionary<GraphNode, GraphNode> splitNodes = new Dictionary<GraphNode, GraphNode>();// Associates nodes from the outside and inside graphs that have been duplicated along the truncation edge
 
         public MeshClipper(Mesh mesh)
         {
             outside = new Graph(mesh);
+            chunks = new List<SplitGraph>();
         }
 
-        public void Clip(Graph convexClipShape, Vector2 nuclei)
+        public Graph Clip(Graph convexClipShape, Vector2 nuclei)
         {
             // Clip once per graph edge
             foreach (GraphEdge clipEdge in convexClipShape.Edges)
@@ -30,47 +31,31 @@ namespace Graph2D
 
                 // Clip edges that aren't inside of line
                 Split(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, insideSide);
-                chunks.Add(inside);
             }
 
             // Remove the last chunk: its the inside chunk
+            Graph inside = chunks.Last().Inside;
             chunks.RemoveAt(chunks.Count - 1);
+            Stitch();
+
+            return inside;
         }
 
         private void Stitch()
         {
-            // Index begins at second to last chunk because last chunk's split nodes connect to the inside chunk (aka they aren't getting re-attached)
-            int chunkIndex = chunks.Count - 2;
-            Dictionary<GraphNode, GraphNode> chunkSplitNodes = new Dictionary<GraphNode, GraphNode>();
-
-            // TODO: Iterate backwards
-            foreach (KeyValuePair<GraphNode, GraphNode> splitNode in splitNodes)
-            {
-                //
-                if (chunks[chunkIndex].Nodes.Contains(splitNode.Key))
-                {
-                    // Add kvp to chunksSplitNodes dict
-                    // keep looping backwards until getting to nodes from next graph
-                }
-
-                //check here for getting to node from next graph
-                else if (true)
-                {
-                    // Tell chunkIndex - 1 graph to stitch to chunkIndex graph
-                    // TODO: stitch method needs to be able to handle one graph not having the split node
-                    // decrement chunkIndex
-                }
-            }
+            foreach (SplitGraph splitGraph in chunks.Reverse<SplitGraph>())
+                splitGraph.Outside.Stitch(splitGraph.Inside, splitGraph.SplitNodes);
         }
 
         /// <summary>
         /// Splits the graph along the given edge. The original graph is edited to reflect the split. A second graph containing the portion
         /// of the original graph that is inside the given edge is returned.
         /// </summary>
-        public void Split(Vector2 clipEdgePoint1, Vector2 clipEdgePoint2, float insideSide)
+        private void Split(Vector2 clipEdgePoint1, Vector2 clipEdgePoint2, float insideSide)
         {
             // Graph to contain the portion of the meshGraph inside the given edge
             inside = new Graph();
+            chunks.Add(new SplitGraph(outside, inside));
 
             interGraphDuplicateNodes = new Dictionary<GraphNode, GraphNode>();         // Associates nodes with duplicates in insideGraph, so that nodes shared between triangles can be maintained
             truncatedEdgeCatalogue = new Dictionary<GraphEdge, GraphEdge>();           // Associates edges with their clipped version, so each edge is truncated only once even if it is shared by triangles
@@ -109,8 +94,8 @@ namespace Graph2D
                         GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
 
                         // REMEMBER stitch line node duplicates
-                        splitNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
-                        splitNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
+                        chunks.Last().AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
+                        chunks.Last().AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
                     }
 
                     /// <summary>
@@ -131,8 +116,8 @@ namespace Graph2D
                         GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
 
                         // Stitch nodes
-                        splitNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
-                        splitNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
+                        chunks.Last().AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
+                        chunks.Last().AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
                     }
 
                     /// <summary>
@@ -153,8 +138,8 @@ namespace Graph2D
                         GraphNode[] insideTriangleNodes = TriangulateHoleInInsideGraph(intersectionNodes, insideNodes);
 
                         // Stitch nodes
-                        splitNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
-                        splitNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
+                        chunks.Last().AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
+                        chunks.Last().AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
                     }
                 }
             }

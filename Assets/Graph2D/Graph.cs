@@ -243,6 +243,11 @@ namespace Graph2D
                 edge.RemoveTriangle(triangle);
         }
 
+        public bool Contains(GraphNode node)
+        {
+            return Nodes.Contains(node);
+        }
+
         public bool ContainsTriangle(GraphNode a, GraphNode b, GraphNode c)
         {
             // Check each triangle to see if it contains ALL of the given nodes
