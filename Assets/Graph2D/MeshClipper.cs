@@ -21,15 +21,20 @@ namespace Graph2D
             chunks = new List<SplitGraph>();
         }
 
-        public Graph Clip(Graph convexClipShape, Vector2 nuclei)
+        /// <summary>
+        /// Cuts a hole in the given mesh, according to the shape of the given polygon graph. The nuclei is a point that lies inside
+        /// the polygon. Clipping occurs by extending each edge of the polygon so it is infinite in length and truncating mesh triangles
+        /// along the edge.
+        /// </summary>
+        public Graph Clip(Graph convexPolygon, Vector2 nuclei)
         {
-            // Clip once per graph edge
-            foreach (GraphEdge clipEdge in convexClipShape.Edges)
+            // Each edge of the polygon is extended so it is infinite in length and then used to clip the meshes triangles
+            foreach (GraphEdge clipEdge in convexPolygon.Edges)
             {
                 // Which side of edge is counted as being inside?
                 float insideSide = MathExtension.Side(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, nuclei);
 
-                // Clip edges that aren't inside of line
+                // Split graph so stuff outside edge is in one graph, stuff inside the edge is in another, truncate triangles along the edge
                 Split(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, insideSide);
             }
 
@@ -157,11 +162,14 @@ namespace Graph2D
         }
 
         /// <summary>
-        /// Truncates edges of the triangle intersected by the given clipEdge. The clippedGraph is updated to reflect the truncation. The two points of intersection between the clip edge and
-        /// triangle are created and returned. An edge is also created between the points of intersection. Where a triangle node falls on the clipEdge no node is created, instead the onEdge
-        /// node is returned with the other intersection node.
+        /// Truncates edges of the triangle intersected by the given clipEdge. The clippedGraph is updated to reflect the truncation. The 
+        /// two points of intersection between the clip edge and triangle are created and returned. An edge is also created between the 
+        /// points of intersection. Where a triangle node falls on the clipEdge no node is created, instead the onEdge node is returned 
+        /// with the other intersection node.
         /// </summary>
-        private GraphNode[] TruncateTriangle(GraphTriangle triangle, GraphNode[] insideNodes, GraphNode[] onEdgeNodes, GraphNode[] outsideNodes, Vector2 clipEdgePoint1, Vector2 clipEdgePoint2)
+        private GraphNode[] TruncateIntersectedTriangle(GraphTriangle triangle, 
+            GraphNode[] insideNodes, GraphNode[] onEdgeNodes, GraphNode[] outsideNodes, 
+            Vector2 clipEdgePoint1, Vector2 clipEdgePoint2)
         {
             // Remember the intersection nodes so they can be triangulated
             GraphNode[] intersectionNodes = new GraphNode[2];
@@ -179,7 +187,7 @@ namespace Graph2D
                     if (truncatedEdgeCatalogue.ContainsKey(clippedEdge))        // Check catalogue of already clipped edges
                     {
                         // Get the new edges intersection node, add to array
-                        GraphNode intersectionNode = truncatedEdgeCatalogue[clippedEdge].GetOther(insideNode);
+                        GraphNode intersectionNode = truncatedEdgeCatalogue[clippedEdge].GetOther(outsideNode);
                         intersectionNodes[index++] = intersectionNode;
                     }
 
@@ -192,9 +200,9 @@ namespace Graph2D
                         GraphNode intersectionNode = outside.CreateNode(intersection);
                         intersectionNodes[index++] = intersectionNode;
 
-                        // Create an edge from the insideNode to the intersectionNode, add to truncatedEdgeCatalogue
-                        GraphEdge insideToIntersectionEdge = outside.CreateEdge(insideNode, intersectionNode);
-                        truncatedEdgeCatalogue.Add(clippedEdge, insideToIntersectionEdge);
+                        // Create an edge from the outsideNode to the intersectionNode, add to truncatedEdgeCatalogue
+                        GraphEdge outsideToIntersectionEdge = outside.CreateEdge(outsideNode, intersectionNode);
+                        truncatedEdgeCatalogue.Add(clippedEdge, outsideToIntersectionEdge);
                     }
                 }
             }
