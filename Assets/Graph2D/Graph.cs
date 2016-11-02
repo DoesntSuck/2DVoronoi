@@ -152,6 +152,7 @@ namespace Graph2D
 
         public GraphTriangle DefineTriangle(GraphNode a, GraphNode b, GraphNode c)
         {
+            // TODO: Error here during breaking. There is no edge between two of the nodes
             GraphTriangle triangle = new GraphTriangle(a.GetEdge(b), a.GetEdge(c), b.GetEdge(c));
             Triangles.Add(triangle);
 

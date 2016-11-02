@@ -82,8 +82,10 @@ namespace Assets
 
             foreach (Graph clipCell in voronoi.Cells)
             {
+                // Each clip creates a new graph
                 Graph clippedGraph = clipper.Clip(clipCell, clipCell.Nuclei);
 
+                // Instantiate 
                 GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
                 chunk.GetComponent<MeshFilter>().mesh = clippedGraph.ToMesh("Clipped Mesh");
                 chunk.GetComponent<PolygonCollider2D>().points = clippedGraph.OutsideNodes().Select(n => n.Vector).ToArray();
