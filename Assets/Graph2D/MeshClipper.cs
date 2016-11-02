@@ -63,101 +63,91 @@ namespace Graph2D
             // Iterate through every triangle in Graph seeing if it has been clipped
             List<GraphTriangle> triangles = outside.Triangles.ToList();        // Copy collection so can alter original whilst iterating
             foreach (GraphTriangle triangle in triangles)
-            {
-                // Get nodes, inside, outside, and on the clip edge
-                GraphNode[] insideNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == insideSide).ToArray();
-                GraphNode[] onEdgeNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == 0).ToArray();
-                GraphNode[] outsideNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == -insideSide).ToArray();
-
-                // No intersection
-                if (outsideNodes.Length == 0)   // Triangle is INSIDE the clip edge
-                    CreateTriangleInInsideGraph(triangle.Nodes[0], triangle.Nodes[1], triangle.Nodes[2]); // Cut / Paste triangle to insideGraph:
-
-                else // Clip edge intersects with triangle
-                {
-                    GraphNode[] intersectionNodes = TruncateTriangle(triangle, insideNodes, onEdgeNodes, outsideNodes, clipEdgePoint1, clipEdgePoint2);
-
-                    /// <summary>
-                    /// CASE: (ONE node INSIDE, ONE node ON EDGE, ONE node OUTSIDE)
-                    ///        `._____      ↑
-                    ///         \`.  /   outside
-                    ///  inside  \ `.
-                    ///     ↓     \/ `. clip edge                                   
-                    /// </summary>
-                    if (onEdgeNodes.Length == 1)
-                    {
-                        // Define new triangle in THIS graph
-                        // TODO: Remove old triangle
-                        outside.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
-
-                        // Add nodes / edges / triangle to split graph
-                        GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
-
-                        // REMEMBER stitch line node duplicates
-                        chunks.Last().AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
-                        chunks.Last().AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
-                    }
-
-                    /// <summary>
-                    /// Case: (ONE node INSIDE, TWO nodes OUTSIDE)
-                    ///                        ↑
-                    ///           ______    outside     
-                    ///         __\____/__ 
-                    /// inside     \  /    clip edge          
-                    ///    ↓        \/               
-                    /// </summary>
-                    else if (insideNodes.Length == 1)
-                    {
-                        // Triangulate the hole in outside graph
-                        // TODO: remove old triangle
-                        TriangulateHoleInOutsideGraph(intersectionNodes.Union(outsideNodes));
-
-                        // New triangle created in inside graph (inside, intersection, intersection)
-                        GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
-
-                        // Stitch nodes
-                        chunks.Last().AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
-                        chunks.Last().AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
-                    }
-
-                    /// <summary>
-                    /// Case: (TWO nodes INSIDE, ONE node OUTSIDE)
-                    ///                      ↑
-                    ///            /\     outside
-                    ///         __/__\__ 
-                    ///  inside  /____\  clip edge
-                    ///    ↓
-                    /// </summary>
-                    else if (outsideNodes.Length == 1)
-                    {
-                        // Create triangle in THIS graph (outside, intersection, intersection)
-                        // TODO: remove triangle
-                        outside.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
-
-                        // Triangulate hole in insideGraph
-                        GraphNode[] insideTriangleNodes = TriangulateHoleInInsideGraph(intersectionNodes, insideNodes);
-
-                        // Stitch nodes
-                        chunks.Last().AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
-                        chunks.Last().AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
-                    }
-                }
-            }
+                TruncateTriangle(triangle, clipEdgePoint1, clipEdgePoint2, insideSide);
 
             // TODO: Remove all nodes from oldNewNodesDict.Keys() from current graph -> maybe dict doesn't contain all necessary nodes
             foreach (GraphNode node in interGraphDuplicateNodes.Keys)
                 outside.Destroy(node);
         }
 
-        private GraphNode GetOrCreateInsideNode(GraphNode clippedMeshGraphNode)
+        private void TruncateTriangle(GraphTriangle triangle, Vector3 clipEdgePoint1, Vector3 clipEdgePoint2, float insideSide)
         {
-            if (interGraphDuplicateNodes.ContainsKey(clippedMeshGraphNode))
-                return interGraphDuplicateNodes[clippedMeshGraphNode];
-            else
+            // Get nodes, inside, outside, and on the clip edge
+            GraphNode[] insideNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == insideSide).ToArray();
+            GraphNode[] onEdgeNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == 0).ToArray();
+            GraphNode[] outsideNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == -insideSide).ToArray();
+
+            // No intersection - aka Triangle is INSIDE the clip edge - Cut / Paste triangle to insideGraph:
+            if (outsideNodes.Length == 0) CreateTriangleInInsideGraph(triangle.Nodes[0], triangle.Nodes[1], triangle.Nodes[2]);
+
+            else // Clip edge intersects with triangle
             {
-                GraphNode node = inside.CreateNode(clippedMeshGraphNode.Vector);
-                interGraphDuplicateNodes.Add(clippedMeshGraphNode, node);
-                return node;
+                GraphNode[] intersectionNodes = TruncateTriangle(triangle, insideNodes, onEdgeNodes, outsideNodes, clipEdgePoint1, clipEdgePoint2);
+
+                /// <summary>
+                /// CASE: (ONE node INSIDE, ONE node ON EDGE, ONE node OUTSIDE)
+                ///        `._____      ↑
+                ///         \`.  /   outside
+                ///  inside  \ `.
+                ///     ↓     \/ `. clip edge                                   
+                /// </summary>
+                if (onEdgeNodes.Length == 1)
+                {
+                    // Define new triangle in THIS graph
+                    // TODO: Remove old triangle
+                    outside.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
+
+                    // Add nodes / edges / triangle to split graph
+                    GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
+
+                    // REMEMBER stitch line node duplicates
+                    chunks.Last().AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
+                    chunks.Last().AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
+                }
+
+                /// <summary>
+                /// Case: (ONE node INSIDE, TWO nodes OUTSIDE)
+                ///                        ↑
+                ///           ______    outside     
+                ///         __\____/__ 
+                /// inside     \  /    clip edge          
+                ///    ↓        \/               
+                /// </summary>
+                else if (insideNodes.Length == 1)
+                {
+                    // Triangulate the hole in outside graph
+                    // TODO: remove old triangle
+                    TriangulateHoleInOutsideGraph(intersectionNodes.Union(outsideNodes));
+
+                    // New triangle created in inside graph (inside, intersection, intersection)
+                    GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
+
+                    // Stitch nodes
+                    chunks.Last().AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
+                    chunks.Last().AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
+                }
+
+                /// <summary>
+                /// Case: (TWO nodes INSIDE, ONE node OUTSIDE)
+                ///                      ↑
+                ///            /\     outside
+                ///         __/__\__ 
+                ///  inside  /____\  clip edge
+                ///    ↓
+                /// </summary>
+                else if (outsideNodes.Length == 1)
+                {
+                    // Create triangle in THIS graph (outside, intersection, intersection)
+                    // TODO: remove triangle
+                    outside.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
+
+                    // Triangulate hole in insideGraph
+                    GraphNode[] insideTriangleNodes = TriangulateHoleInInsideGraph(intersectionNodes, insideNodes);
+
+                    // Stitch nodes
+                    chunks.Last().AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
+                    chunks.Last().AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
+                }
             }
         }
 
@@ -208,6 +198,18 @@ namespace Graph2D
             outside.CreateEdge(intersectionNodes[0], intersectionNodes[1]);
 
             return intersectionNodes;
+        }
+
+        private GraphNode GetOrCreateInsideNode(GraphNode clippedMeshGraphNode)
+        {
+            if (interGraphDuplicateNodes.ContainsKey(clippedMeshGraphNode))
+                return interGraphDuplicateNodes[clippedMeshGraphNode];
+            else
+            {
+                GraphNode node = inside.CreateNode(clippedMeshGraphNode.Vector);
+                interGraphDuplicateNodes.Add(clippedMeshGraphNode, node);
+                return node;
+            }
         }
 
         private GraphNode[] CreateTriangleInInsideGraph(GraphNode a, GraphNode b, GraphNode c)
