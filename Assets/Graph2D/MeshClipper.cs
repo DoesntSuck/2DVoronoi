@@ -68,14 +68,14 @@ namespace Graph2D
             // Iterate through every triangle in Graph seeing if it has been clipped
             List<GraphTriangle> triangles = outside.Triangles.ToList();        // Copy collection so can alter original whilst iterating
             foreach (GraphTriangle triangle in triangles)
-                TruncateTriangle(triangle, clipEdgePoint1, clipEdgePoint2, insideSide);
+                AssignToGraph(triangle, clipEdgePoint1, clipEdgePoint2, insideSide);
 
             // TODO: Remove all nodes from oldNewNodesDict.Keys() from current graph -> maybe dict doesn't contain all necessary nodes
             foreach (GraphNode node in interGraphDuplicateNodes.Keys)
                 outside.Destroy(node);
         }
 
-        private void TruncateTriangle(GraphTriangle triangle, Vector3 clipEdgePoint1, Vector3 clipEdgePoint2, float insideSide)
+        private void AssignToGraph(GraphTriangle triangle, Vector3 clipEdgePoint1, Vector3 clipEdgePoint2, float insideSide)
         {
             // Get nodes, inside, outside, and on the clip edge
             GraphNode[] insideNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == insideSide).ToArray();
@@ -87,6 +87,8 @@ namespace Graph2D
 
             // Also no intersection
             else if (insideNodes.Length == 0) { /* Nothing */ }
+
+            // TODO: New method that handles intersected triangle
 
             else // Clip edge intersects with triangle
             {
@@ -159,6 +161,45 @@ namespace Graph2D
                     chunks.Last().AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
                 }
             }
+        }
+
+        private void TriangleIntersection(GraphTriangle triangle,
+            GraphNode[] insideNodes, GraphNode[] onEdgeNodes, GraphNode[] outsideNodes,
+            Vector2 clipEdgePoint1, Vector2 clipEdgePoint2)
+        {
+
+        }
+
+        private void OneInTwoOut(GraphTriangle triangle,
+            GraphNode[] insideNodes, GraphNode[] onEdgeNodes, GraphNode[] outsideNodes,
+            Vector2 clipEdgePoint1, Vector2 clipEdgePoint2)
+        {
+
+        }
+
+        private void OneInOneOnOneOut(GraphTriangle triangle,
+            GraphNode[] insideNodes, GraphNode[] onEdgeNodes, GraphNode[] outsideNodes,
+            Vector2 clipEdgePoint1, Vector2 clipEdgePoint2)
+        {
+            GraphNode[] intersectionNodes = TruncateTriangle(triangle, insideNodes, onEdgeNodes, outsideNodes, clipEdgePoint1, clipEdgePoint2);
+
+            // Define new triangle in THIS graph
+            // TODO: Remove old triangle
+            outside.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
+
+            // Add nodes / edges / triangle to split graph
+            GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
+
+            // REMEMBER stitch line node duplicates
+            chunks.Last().AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
+            chunks.Last().AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
+        }
+
+        private void TwoInOneOut(GraphTriangle triangle,
+            GraphNode[] insideNodes, GraphNode[] onEdgeNodes, GraphNode[] outsideNodes,
+            Vector2 clipEdgePoint1, Vector2 clipEdgePoint2)
+        {
+
         }
 
         /// <summary>
