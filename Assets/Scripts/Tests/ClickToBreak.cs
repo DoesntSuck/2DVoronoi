@@ -16,7 +16,6 @@ namespace Assets
         public float Radius;
         public int ChunkCount;
 
-        private MeshClipper clipper;
         private VoronoiTessellation voronoi;
         private MeshFilter meshFilter;
         private Vector3 clickPosition;
@@ -26,11 +25,6 @@ namespace Assets
         {
             meshFilter = GetComponent<MeshFilter>();
             collider = GetComponent<Collider2D>();
-        }
-
-        void Start()
-        {
-            clipper = new MeshClipper(GetComponent<MeshFilter>().mesh);
         }
 
         void OnMouseDown()
@@ -80,15 +74,21 @@ namespace Assets
             voronoi = new VoronoiTessellation();
             voronoi.Insert(points);
 
+            // This is the graph that will be clipped, after being clipped this graph stores the area of graph inside the Voronoi cell
+            Graph clipGraph = new Graph(meshFilter.mesh);
+
             foreach (Graph clipCell in voronoi.Cells)
             {
                 // Each clip creates a new graph
-                Graph clippedGraph = clipper.Clip(clipCell, clipCell.Nuclei);
+                Graph remains = GraphClipper.Clip(clipGraph, clipCell, clipCell.Nuclei);
 
                 // Instantiate 
                 GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
-                chunk.GetComponent<MeshFilter>().mesh = clippedGraph.ToMesh("Clipped Mesh");
-                chunk.GetComponent<PolygonCollider2D>().points = clippedGraph.OutsideNodes().Select(n => n.Vector).ToArray();
+                chunk.GetComponent<MeshFilter>().mesh = clipGraph.ToMesh("Clipped Mesh");
+                chunk.GetComponent<PolygonCollider2D>().points = clipGraph.OutsideNodes().Select(n => n.Vector).ToArray();
+
+                // The remains is clipped next
+                clipGraph = remains;
             }
 
             GetComponent<Collider2D>().enabled = false;
