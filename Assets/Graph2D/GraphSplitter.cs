@@ -118,6 +118,8 @@ namespace Graph2D
             // REMEMBER stitch line node duplicates
             splitGraph.AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
             splitGraph.AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
+
+            outsideGraph.Remove(triangle);
         }
 
         /// <summary> CASE: (ONE node INSIDE, TWO nodes OUTSIDE):
@@ -154,6 +156,8 @@ namespace Graph2D
             // Stitch nodes
             splitGraph.AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
             splitGraph.AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
+
+            outsideGraph.Remove(triangle);
         }
 
         /// <summary> CASE: (TWO nodes INSIDE, ONE node OUTSIDE): 
@@ -192,6 +196,8 @@ namespace Graph2D
             // Stitch nodes
             splitGraph.AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
             splitGraph.AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
+
+            outsideGraph.Remove(triangle);
         }
 
         private static void TriangulateHoleInOutsideGraph(IEnumerable<GraphNode> holeNodes)
@@ -255,7 +261,7 @@ namespace Graph2D
                 foreach (GraphNode insideNode in insideNodes)   // One or two insideNodes
                 {
                     // IF EDGE HAS ALREADY BEEN CLIPPED... (by a different triangle)
-                    GraphEdge clippedEdge = insideNode.GetEdge(outsideNode);
+                    GraphEdge clippedEdge = outsideNode.GetEdge(insideNode);
                     if (truncatedEdgeCatalogue.ContainsKey(clippedEdge))        // Check catalogue of already clipped edges
                     {
                         // Get the new edges intersection node, add to array

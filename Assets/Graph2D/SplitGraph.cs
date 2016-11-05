@@ -24,7 +24,8 @@ namespace Graph2D
 
         public void AddSplitNode(GraphNode outside, GraphNode inside)
         {
-            SplitNodes.Add(outside, inside);
+            if (!SplitNodes.ContainsKey(outside))
+                SplitNodes.Add(outside, inside);
         }
 
         public void Stitch()
