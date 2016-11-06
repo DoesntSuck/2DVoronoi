@@ -6,8 +6,7 @@ using Graph2D;
 
 public class GraphSplitterTest : MonoBehaviour
 {
-    Graph insideGraph;
-    Graph outsideGraph;
+    public Transform inside;
 
     Mesh mesh;
     Transform[] edgeHandles;
@@ -25,26 +24,41 @@ public class GraphSplitterTest : MonoBehaviour
         {
             // Get mesh, convert to graph
             mesh = GetComponent<MeshFilter>().mesh;
-            outsideGraph = new Graph(mesh);
+            Graph outsideGraph = new Graph(mesh);
 
-            SplitGraph splitGraph = GraphSplitter.Split(outsideGraph, edgeHandles[0].position, edgeHandles[1].position, 1);
-            insideGraph = splitGraph.Inside;
+            float insideSide = MathExtension.Side(edgeHandles[0].position, edgeHandles[1].position, inside.position);
+            SplitGraph splitGraph1 = GraphSplitter.Split(outsideGraph, edgeHandles[0].position, edgeHandles[1].position, insideSide);
 
-            GameObject inside = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            Destroy(inside.GetComponent<MeshCollider>());
-            inside.GetComponent<MeshFilter>().mesh = splitGraph.Inside.ToMesh();
+            insideSide = MathExtension.Side(edgeHandles[1].position, edgeHandles[2].position, inside.position);
+            SplitGraph splitGraph2 = GraphSplitter.Split(splitGraph1.Inside, edgeHandles[1].position, edgeHandles[2].position, 1);
 
-            GetComponent<MeshFilter>().mesh = splitGraph.Outside.ToMesh();
+            CreateGameObject(splitGraph2.Inside);
+            CreateGameObject(splitGraph2.Outside);
+            CreateGameObject(splitGraph1.Outside);
+
+            GetComponent<MeshRenderer>().enabled = false;
+            // TODO: split again, using another line
         }
 	}
 
     void OnDrawGizmos()
     {
-        if (edgeHandles != null && edgeHandles.Length == 2)
+        if (inside != null)
+            Gizmos.DrawSphere(inside.position, 0.01f);
+
+        if (edgeHandles != null)
         {
             // Draw edge
             Gizmos.color = Color.red;
-            Gizmos.DrawLine(edgeHandles[0].position, edgeHandles[1].position);
+            for (int i = 0; i < edgeHandles.Length - 1; i++)
+                Gizmos.DrawLine(edgeHandles[i].position, edgeHandles[i + 1].position);
         }
+    }
+
+    void CreateGameObject(Graph graph)
+    {
+        GameObject graphObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        Destroy(graphObject.GetComponent<MeshCollider>());
+        graphObject.GetComponent<MeshFilter>().mesh = graph.ToMesh();
     }
 }
