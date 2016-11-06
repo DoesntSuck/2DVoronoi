@@ -90,6 +90,7 @@ namespace Graph2D
             // foreach tri, get its node indicies from dict, add nodes to list of tris
             foreach (GraphTriangle triangle in Triangles)
             {
+                triangle.OrderNodes();
                 foreach (GraphNode node in triangle.Nodes)
                     triIndices.Add(nodeIndexDict[node]);
             }

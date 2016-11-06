@@ -24,6 +24,8 @@ namespace Graph2D
         /// </summary>
         private static Dictionary<GraphNode, GraphNode> outsideInsideNodeAssociations;
 
+        private static List<GraphNode> transferedNodes;
+
         /// <summary>
         /// Splits the given mesh in two along the given edge.
         /// </summary>
@@ -37,6 +39,7 @@ namespace Graph2D
             // Associates edges with their clipped version, so each edge is truncated only once even if it is shared by triangles
             truncatedEdgeCatalogue = new Dictionary<GraphEdge, GraphEdge>();
             outsideInsideNodeAssociations = new Dictionary<GraphNode, GraphNode>();
+            transferedNodes = new List<GraphNode>();
 
             // Copy collection so can alter original whilst iterating
             List<GraphTriangle> triangles = outsideGraph.Triangles.ToList();        
@@ -44,6 +47,10 @@ namespace Graph2D
             // Iterate through every triangle in outside Graph seeing if it has been clipped
             foreach (GraphTriangle triangle in triangles)
                 AssignTriangleToGraph(triangle, edgePoint1, edgePoint2, insideSide);
+
+            // Remove all nodes that were transfered to the inside graph
+            foreach (GraphNode insideNode in transferedNodes)
+                graph.Destroy(insideNode);
 
             // Return inside, outside graphs and the nodes shared between them
             return splitGraph;
@@ -59,6 +66,8 @@ namespace Graph2D
             GraphNode[] insideNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == insideSide).ToArray();
             GraphNode[] onEdgeNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == 0).ToArray();
             GraphNode[] outsideNodes = triangle.Nodes.Where(n => MathExtension.Side(clipEdgePoint1, clipEdgePoint2, n.Vector) == -insideSide).ToArray();
+
+            transferedNodes.AddRange(insideNodes);
 
             // No intersection - aka Triangle is INSIDE the clip edge - Cut / Paste triangle to insideGraph:
             if (outsideNodes.Length == 0)
