@@ -30,10 +30,12 @@ public class GraphSplitterTest : MonoBehaviour
             SplitGraph splitGraph1 = GraphSplitter.Split(outsideGraph, edgeHandles[0].position, edgeHandles[1].position, insideSide);
 
             insideSide = MathExtension.Side(edgeHandles[1].position, edgeHandles[2].position, inside.position);
-            SplitGraph splitGraph2 = GraphSplitter.Split(splitGraph1.Inside, edgeHandles[1].position, edgeHandles[2].position, 1);
+            SplitGraph splitGraph2 = GraphSplitter.Split(splitGraph1.Inside, edgeHandles[1].position, edgeHandles[2].position, insideSide);
 
             CreateGameObject(splitGraph2.Inside);
-            CreateGameObject(splitGraph2.Outside);
+            //CreateGameObject(splitGraph2.Outside);
+
+            splitGraph1.Stitch();
             CreateGameObject(splitGraph1.Outside);
 
             GetComponent<MeshRenderer>().enabled = false;
