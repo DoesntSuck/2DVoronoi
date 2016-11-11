@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Graph2D;
 
@@ -27,10 +27,10 @@ public class GraphStitcherTest : MonoBehaviour
             mesh = GetComponent<MeshFilter>().mesh;
             outsideGraph = new Graph(mesh);
 
-            SplitGraph splitGraph = GraphSplitter.Split(outsideGraph, edgeHandles[0].position, edgeHandles[1].position, 1);
-            splitGraph.Stitch();
+            Dictionary<GraphNode, GraphNode> splitNodes = GraphSplitter.Split(outsideGraph, out insideGraph, edgeHandles[0].position, edgeHandles[1].position, 1);
+            outsideGraph.Stitch(insideGraph, splitNodes);
 
-            GetComponent<MeshFilter>().mesh = splitGraph.Outside.ToMesh();
+            GetComponent<MeshFilter>().mesh = outsideGraph.ToMesh();
         }
     }
 

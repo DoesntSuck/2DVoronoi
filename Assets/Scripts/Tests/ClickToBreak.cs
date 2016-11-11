@@ -63,7 +63,7 @@ namespace Assets
                 GraphDebug.EdgeColour = Color.red;
 
                 foreach (Graph cell in voronoi.Cells)
-                   GraphDebug.DrawEdges(cell.Edges);
+                    GraphDebug.DrawEdges(cell.Edges);
             }
         }
 
@@ -80,7 +80,9 @@ namespace Assets
             foreach (Graph clipCell in voronoi.Cells)
             {
                 // Each clip creates a new graph
-                Graph remains = GraphClipper.Clip(clipGraph, clipCell, clipCell.Nuclei);
+                Graph outside;
+                Graph inside;
+                GraphClipper.Clip(clipGraph, clipCell, clipCell.Nuclei, out inside, out outside);
 
                 // Instantiate 
                 GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
@@ -88,7 +90,7 @@ namespace Assets
                 chunk.GetComponent<PolygonCollider2D>().points = clipGraph.OutsideNodes().Select(n => n.Vector).ToArray();
 
                 // The remains is clipped next
-                clipGraph = remains;
+                clipGraph = outside;
             }
 
             GetComponent<Collider2D>().enabled = false;

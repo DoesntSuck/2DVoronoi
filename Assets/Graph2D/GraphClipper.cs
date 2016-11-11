@@ -7,24 +7,25 @@ namespace Graph2D
 {
     public static class GraphClipper
     {
-        private static List<SplitGraph> chunks;
+        private static List<Graph> pieces;
+        private static List<Dictionary<GraphNode, GraphNode>> piecesSplitNodes;
 
         /// <summary>
         /// Cuts a hole in the given mesh, according to the shape of the given polygon graph. The nuclei is a point that lies inside
         /// the polygon. Clipping occurs by extending each edge of the polygon so it is infinite in length and truncating mesh triangles
         /// along the edge.
         /// </summary>
-        public static Graph Clip(Graph graph, Graph convexPolygon, Vector2 nuclei)
+        public static void Clip(Graph graph, Graph convexPolygon, Vector2 nuclei, out Graph inside, out Graph outside)
         {
-            chunks = new List<SplitGraph>();
-            SplitIntoChunks(graph, convexPolygon, nuclei);
+            pieces = new List<Graph>();
+            pieces.Add(graph);
+            piecesSplitNodes = new List<Dictionary<GraphNode, GraphNode>>();
 
-            // Remove the last chunk: its the inside chunk
-            chunks.RemoveAt(chunks.Count - 1);
+            SplitIntoChunks(graph, convexPolygon, nuclei);
             StitchChunksTogether();
 
-            // Return the left over graph parts that have been stitched back together
-            return chunks.First().Outside;
+            inside = pieces.Last();
+            outside = pieces[pieces.Count - 2];
         }
 
         private static void SplitIntoChunks(Graph graph, Graph convexPolygon, Vector2 nuclei)
@@ -32,19 +33,25 @@ namespace Graph2D
             // Each edge of the polygon is extended so it is infinite in length and then used to clip the meshes triangles
             foreach (GraphEdge clipEdge in convexPolygon.Edges)
             {
+                Vector3 edgePoint1 = clipEdge.Nodes[0].Vector;
+                Vector3 edgePoint2 = clipEdge.Nodes[1].Vector;
+
                 // Which side of edge is counted as being inside?
-                float insideSide = MathExtension.Side(clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, nuclei);
+                float insideSide = MathExtension.Side(edgePoint1, edgePoint2, nuclei);
 
                 // Split graph so stuff outside edge is in one graph, stuff inside the edge is in another, truncate triangles along the edge
-                SplitGraph splitGraph = GraphSplitter.Split(graph, clipEdge.Nodes[0].Vector, clipEdge.Nodes[1].Vector, insideSide);
-                chunks.Add(splitGraph);
+                Graph insideGraph;
+                Dictionary<GraphNode, GraphNode> splitNodes = GraphSplitter.Split(pieces.Last(), out insideGraph, edgePoint1, edgePoint2, insideSide);
+
+                pieces.Add(insideGraph);
+                piecesSplitNodes.Add(splitNodes);
             }
         }
 
         private static void StitchChunksTogether()
         {
-            foreach (SplitGraph splitGraph in chunks.Reverse<SplitGraph>())
-                splitGraph.Outside.Stitch(splitGraph.Inside, splitGraph.SplitNodes);
+            for (int i = 0; i < pieces.Count - 2; i++)
+                pieces[i + 1].Stitch(pieces[i], piecesSplitNodes[i]);
         }
     }
 }

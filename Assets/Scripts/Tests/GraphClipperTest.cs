@@ -1,22 +1,21 @@
 ﻿using UnityEngine;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections;
 using Graph2D;
+using System.Linq;
 
-
-public class GraphSplitterTest : MonoBehaviour
+public class GraphClipperTest : MonoBehaviour
 {
     public Transform inside;
 
-    Transform[] edgeHandles;
     Mesh mesh;
-    List<Graph> pieces;
-    List<Dictionary<GraphNode, GraphNode>> piecesSplitNodes;
+    Transform[] edgeHandles;
+    Graph clipGraph;
 
     void Awake()
     {
         // Get all child transforms, excluding this one.
         edgeHandles = GetComponentsInChildren<Transform>().Where(t => t != transform).ToArray();
+        CreateClipGraph();
     }
 
     // Update is called once per frame
@@ -27,28 +26,13 @@ public class GraphSplitterTest : MonoBehaviour
             // Get mesh, convert to graph
             mesh = GetComponent<MeshFilter>().mesh;
 
-            pieces = new List<Graph>();
-            pieces.Add(new Graph(mesh));
-            piecesSplitNodes = new List<Dictionary<GraphNode, GraphNode>>();
+            Graph original = new Graph(mesh);
+            Graph insideGraph;
+            Graph outsideGraph;
+            GraphClipper.Clip(original, clipGraph, inside.position, out insideGraph, out outsideGraph);
 
-            for (int i = 0; i < edgeHandles.Length; i++)
-            {
-                Vector3 edgePoint1 = edgeHandles[i].position;
-                Vector3 edgePoint2 = edgeHandles[(i + 1) % edgeHandles.Length].position;
-
-                float insideSide = MathExtension.Side(edgePoint1, edgePoint2, inside.position);
-
-                Graph insideGraph;
-                Dictionary<GraphNode, GraphNode> splitNodes = GraphSplitter.Split(pieces.Last(), out insideGraph, edgePoint1, edgePoint2, insideSide);
-
-                pieces.Add(insideGraph);
-                piecesSplitNodes.Add(splitNodes);
-            }
-
-            CreateGameObject(pieces.Last());
-            for (int i = 0; i < pieces.Count - 2; i++)
-                pieces[i + 1].Stitch(pieces[i], piecesSplitNodes[i]);
-            CreateGameObject(pieces[pieces.Count - 2]);
+            CreateGameObject(insideGraph);
+            CreateGameObject(outsideGraph);
 
             GetComponent<MeshRenderer>().enabled = false;
         }
@@ -66,6 +50,20 @@ public class GraphSplitterTest : MonoBehaviour
             for (int i = 0; i < edgeHandles.Length; i++)
                 Gizmos.DrawLine(edgeHandles[i].position, edgeHandles[(i + 1) % edgeHandles.Length].position);
         }
+    }
+
+    void CreateClipGraph()
+    {
+        clipGraph = new Graph();
+        for (int i = 0; i < edgeHandles.Length - 1; i++)
+        {
+            GraphNode node1 = clipGraph.CreateNode(edgeHandles[i].position);
+            GraphNode node2 = clipGraph.CreateNode(edgeHandles[i + 1].position);
+
+            clipGraph.CreateEdge(node1, node2);  
+        }
+
+        clipGraph.CreateEdge(clipGraph.Nodes.Last(), clipGraph.Nodes.First());
     }
 
     void CreateGameObject(Graph graph)

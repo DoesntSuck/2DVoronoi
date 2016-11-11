@@ -8,9 +8,8 @@ namespace Graph2D
 {
     public static class GraphSplitter
     {
-        private static SplitGraph splitGraph;
-        private static Graph outsideGraph;
-        private static Graph insideGraph;
+        private static Graph outside;
+        private static Graph inside;
 
         // Associates edges with their new, clipped version, so each edge is only truncated once even if it is shared by triangles
         private static Dictionary<GraphEdge, GraphEdge> truncatedEdgeCatalogue;
@@ -24,25 +23,27 @@ namespace Graph2D
         /// </summary>
         private static Dictionary<GraphNode, GraphNode> outsideInsideNodeAssociations;
 
+        private static Dictionary<GraphNode, GraphNode> splitNodes;
+
         private static List<GraphNode> transferedNodes;
 
         /// <summary>
         /// Splits the given mesh in two along the given edge.
         /// </summary>
-        public static SplitGraph Split(Graph graph, Vector2 edgePoint1, Vector2 edgePoint2, float insideSide)
+        public static Dictionary<GraphNode, GraphNode> Split(Graph graph, out Graph insideGraph, Vector2 edgePoint1, Vector2 edgePoint2, float insideSide)
         {
             // Graph to contain the portion of the meshGraph inside the given edge
-            outsideGraph = graph;
-            insideGraph = new Graph();
-            splitGraph = new SplitGraph(outsideGraph, insideGraph);
+            outside = graph;
+            inside = insideGraph = new Graph();
 
             // Associates edges with their clipped version, so each edge is truncated only once even if it is shared by triangles
             truncatedEdgeCatalogue = new Dictionary<GraphEdge, GraphEdge>();
             outsideInsideNodeAssociations = new Dictionary<GraphNode, GraphNode>();
             transferedNodes = new List<GraphNode>();
+            splitNodes = new Dictionary<Graph2D.GraphNode, Graph2D.GraphNode>();
 
             // Copy collection so can alter original whilst iterating
-            List<GraphTriangle> triangles = outsideGraph.Triangles.ToList();        
+            List<GraphTriangle> triangles = outside.Triangles.ToList();        
 
             // Iterate through every triangle in outside Graph seeing if it has been clipped
             foreach (GraphTriangle triangle in triangles)
@@ -53,7 +54,7 @@ namespace Graph2D
                 graph.Destroy(insideNode);
 
             // Return inside, outside graphs and the nodes shared between them
-            return splitGraph;
+            return splitNodes;
         }
 
         /// <summary>
@@ -119,16 +120,17 @@ namespace Graph2D
 
             // Define new triangle in THIS graph
             // TODO: Remove old triangle
-            outsideGraph.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
+            outside.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
 
             // Add nodes / edges / triangle to split graph
             GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
 
             // REMEMBER stitch line node duplicates
-            splitGraph.AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
-            splitGraph.AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
+            if (!splitNodes.ContainsKey(intersectionNodes[0])) splitNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
+            if (!splitNodes.ContainsKey(intersectionNodes[1])) splitNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
 
-            outsideGraph.Remove(triangle);
+
+            outside.Remove(triangle);
         }
 
         /// <summary> CASE: (ONE node INSIDE, TWO nodes OUTSIDE):
@@ -163,10 +165,10 @@ namespace Graph2D
             GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
 
             // Stitch nodes
-            splitGraph.AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
-            splitGraph.AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
+            if (!splitNodes.ContainsKey(intersectionNodes[0])) splitNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
+            if (!splitNodes.ContainsKey(intersectionNodes[1])) splitNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
 
-            outsideGraph.Remove(triangle);
+            outside.Remove(triangle);
         }
 
         /// <summary> CASE: (TWO nodes INSIDE, ONE node OUTSIDE): 
@@ -197,16 +199,16 @@ namespace Graph2D
             // Create triangle in THIS graph (outside, intersection, intersection)
 
             // TODO: Error here! No edge between two of the nodes
-            outsideGraph.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
+            outside.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
 
             // Triangulate hole in insideGraph
             GraphNode[] insideTriangleNodes = TriangulateHoleInInsideGraph(intersectionNodes, insideNodes);
 
             // Stitch nodes
-            splitGraph.AddSplitNode(intersectionNodes[0], insideTriangleNodes[0]);
-            splitGraph.AddSplitNode(intersectionNodes[1], insideTriangleNodes[1]);
+            if (!splitNodes.ContainsKey(intersectionNodes[0])) splitNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
+            if (!splitNodes.ContainsKey(intersectionNodes[1])) splitNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
 
-            outsideGraph.Remove(triangle);
+            outside.Remove(triangle);
         }
 
         private static void TriangulateHoleInOutsideGraph(IEnumerable<GraphNode> holeNodes)
@@ -217,11 +219,11 @@ namespace Graph2D
                 if (!holeNodes.First().HasEdge(node)) oppositeNode = node;
 
             // Create edge between first node and opposite node
-            GraphEdge intersectingEdge = outsideGraph.CreateEdge(holeNodes.First(), oppositeNode);
+            GraphEdge intersectingEdge = outside.CreateEdge(holeNodes.First(), oppositeNode);
 
             // Create triangle between intersecting edge and other nodes in enumeration
             foreach (GraphNode node in holeNodes.Where(n => n != holeNodes.First() && n != oppositeNode))   // Check all nodes except first and opposite
-                outsideGraph.CreateTriangle(intersectingEdge, node);
+                outside.CreateTriangle(intersectingEdge, node);
         }
 
         private static GraphNode[] TriangulateHoleInInsideGraph(GraphNode[] intersectionNodes, GraphNode[] insideNodes)
@@ -233,15 +235,15 @@ namespace Graph2D
             GraphNode insideD = GetOrCreateInsideNode(insideNodes[1]);
 
             // Create edges where necessary
-            GraphEdge insideAB = insideGraph.CreateEdge(insideA, insideB);
-            GraphEdge insideAC = insideA.HasEdge(insideC) ? insideA.GetEdge(insideC) : insideGraph.CreateEdge(insideA, insideC);
-            GraphEdge insideAD = insideA.HasEdge(insideD) ? insideA.GetEdge(insideD) : insideGraph.CreateEdge(insideA, insideD);
-            GraphEdge insideBD = insideB.HasEdge(insideD) ? insideB.GetEdge(insideD) : insideGraph.CreateEdge(insideB, insideD);
-            GraphEdge insideCD = insideC.HasEdge(insideD) ? insideC.GetEdge(insideD) : insideGraph.CreateEdge(insideC, insideD);
+            GraphEdge insideAB = inside.CreateEdge(insideA, insideB);
+            GraphEdge insideAC = insideA.HasEdge(insideC) ? insideA.GetEdge(insideC) : inside.CreateEdge(insideA, insideC);
+            GraphEdge insideAD = insideA.HasEdge(insideD) ? insideA.GetEdge(insideD) : inside.CreateEdge(insideA, insideD);
+            GraphEdge insideBD = insideB.HasEdge(insideD) ? insideB.GetEdge(insideD) : inside.CreateEdge(insideB, insideD);
+            GraphEdge insideCD = insideC.HasEdge(insideD) ? insideC.GetEdge(insideD) : inside.CreateEdge(insideC, insideD);
 
             // Define triangles
-            insideGraph.DefineTriangle(insideAB, insideAD, insideBD);
-            insideGraph.DefineTriangle(insideAD, insideAC, insideCD);
+            inside.DefineTriangle(insideAB, insideAD, insideBD);
+            inside.DefineTriangle(insideAD, insideAC, insideCD);
 
             // Return nodes from inside graph in the order they were given to this method
             return new GraphNode[] { insideA, insideB, insideC, insideD };
@@ -285,18 +287,18 @@ namespace Graph2D
                         Vector2 intersection = MathExtension.KnownIntersection(clipEdgePoint1, clipEdgePoint2, insideNode.Vector, outsideNode.Vector);
 
                         // Create node at intersection, remember node
-                        GraphNode intersectionNode = outsideGraph.CreateNode(intersection);
+                        GraphNode intersectionNode = outside.CreateNode(intersection);
                         intersectionNodes[index++] = intersectionNode;
 
                         // Create an edge from the outsideNode to the intersectionNode, add to truncatedEdgeCatalogue
-                        GraphEdge outsideToIntersectionEdge = outsideGraph.CreateEdge(outsideNode, intersectionNode);
+                        GraphEdge outsideToIntersectionEdge = outside.CreateEdge(outsideNode, intersectionNode);
                         truncatedEdgeCatalogue.Add(clippedEdge, outsideToIntersectionEdge);
                     }
                 }
             }
 
             // Create new edge between intersection points
-            outsideGraph.CreateEdge(intersectionNodes[0], intersectionNodes[1]);
+            outside.CreateEdge(intersectionNodes[0], intersectionNodes[1]);
 
             return intersectionNodes;
         }
@@ -304,7 +306,7 @@ namespace Graph2D
         private static void MoveTriangleToInsideGraph(GraphTriangle outsideTriangle)
         {
             CreateTriangleInInsideGraph(outsideTriangle.Nodes[0], outsideTriangle.Nodes[1], outsideTriangle.Nodes[2]);
-            outsideGraph.Remove(outsideTriangle);
+            outside.Remove(outsideTriangle);
         }
 
         private static GraphNode[] CreateTriangleInInsideGraph(GraphNode outsideA, GraphNode outsideB, GraphNode outsideC)
@@ -315,12 +317,12 @@ namespace Graph2D
             GraphNode insideC = GetOrCreateInsideNode(outsideC);
 
             // Get or create edges
-            GraphEdge ab = insideA.HasEdge(insideB) ? insideA.GetEdge(insideB) : insideGraph.CreateEdge(insideA, insideB);
-            GraphEdge ac = insideA.HasEdge(insideC) ? insideA.GetEdge(insideC) : insideGraph.CreateEdge(insideA, insideC);
-            GraphEdge bc = insideB.HasEdge(insideC) ? insideB.GetEdge(insideC) : insideGraph.CreateEdge(insideB, insideC);
+            GraphEdge ab = insideA.HasEdge(insideB) ? insideA.GetEdge(insideB) : inside.CreateEdge(insideA, insideB);
+            GraphEdge ac = insideA.HasEdge(insideC) ? insideA.GetEdge(insideC) : inside.CreateEdge(insideA, insideC);
+            GraphEdge bc = insideB.HasEdge(insideC) ? insideB.GetEdge(insideC) : inside.CreateEdge(insideB, insideC);
 
             // Define triangle
-            insideGraph.DefineTriangle(ab, ac, bc);
+            inside.DefineTriangle(ab, ac, bc);
 
             // Return new triangle nodes as array in SAME ORDER as was given to this method
             return new GraphNode[] { insideA, insideB, insideC };
@@ -332,7 +334,7 @@ namespace Graph2D
                 return outsideInsideNodeAssociations[outsideNode];
             else
             {
-                GraphNode insideNode = insideGraph.CreateNode(outsideNode.Vector);
+                GraphNode insideNode = inside.CreateNode(outsideNode.Vector);
                 outsideInsideNodeAssociations.Add(outsideNode, insideNode);
                 return insideNode;
             }
