@@ -40,9 +40,9 @@ namespace Assets
             triangulation.Insert(vectors);
 
             if (RemoveSuperTriangle)
-            {
                 triangulation.RemoveSuperTriangle();
-            }
+
+            print("Valid: " + triangulation.Validate());
         }
 
         void OnDrawGizmos()

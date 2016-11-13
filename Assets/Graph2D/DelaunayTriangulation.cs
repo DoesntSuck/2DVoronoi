@@ -39,9 +39,9 @@ namespace Graph2D
             float adjustedD = d * 1.5f;
 
             // Direction from content bounds centre
-            Vector2 topCentre = Vector2.up * adjustedD;
-            Vector2 bottomLeft = (Vector2.down + Vector2.left) * adjustedD;
-            Vector2 bottomRight = (Vector2.down + Vector2.right) * adjustedD;
+            Vector2 topCentre = contentBounds.Centre + Vector2.up * adjustedD;
+            Vector2 bottomLeft = contentBounds.Centre + (Vector2.down + Vector2.left) * adjustedD;
+            Vector2 bottomRight = contentBounds.Centre + (Vector2.down + Vector2.right) * adjustedD;
 
             // Store in an array to pass to Initialize method
             Vector2[] superTriangle = new Vector2[] { topCentre, bottomLeft, bottomRight };
@@ -67,6 +67,20 @@ namespace Graph2D
         /// The nodes that make up the super triangle that contains all other points in this triangulation
         /// </summary>
         public GraphNode[] SuperTriangle { get; private set; }
+
+        public bool Validate()
+        {
+            foreach (GraphTriangle triangle in Graph.Triangles)
+            {
+                foreach (GraphNode node in Graph.Nodes.Where(n => !triangle.Contains(n)))
+                {
+                    if (triangle.Circumcircle.Contains(node.Vector))
+                        return false;
+                }
+            }
+
+            return true;
+        }
 
         /// <summary>
         /// Insert all of the given vectors into this triangulation

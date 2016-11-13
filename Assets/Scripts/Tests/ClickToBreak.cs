@@ -63,7 +63,11 @@ namespace Assets
                 GraphDebug.EdgeColour = Color.red;
 
                 foreach (Graph cell in voronoi.Cells)
+                {
                     GraphDebug.DrawEdges(cell.Edges);
+                    GraphDebug.DrawVector(cell.Nuclei, Color.red, 0.01f);
+                }
+                    
             }
         }
 
@@ -86,8 +90,8 @@ namespace Assets
 
                 // Instantiate 
                 GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
-                chunk.GetComponent<MeshFilter>().mesh = clipGraph.ToMesh("Clipped Mesh");
-                chunk.GetComponent<PolygonCollider2D>().points = clipGraph.OutsideNodes().Select(n => n.Vector).ToArray();
+                chunk.GetComponent<MeshFilter>().mesh = inside.ToMesh("Clipped Mesh");
+                chunk.GetComponent<PolygonCollider2D>().points = inside.OutsideNodes().Select(n => n.Vector).ToArray();
 
                 // The remains is clipped next
                 clipGraph = outside;
