@@ -71,7 +71,7 @@ namespace Graph2D
             // Convert to Voronoi Cells
             cells = new List<Graph>();
 
-            foreach (GraphNode node in Triangulation.Graph.Nodes)
+            foreach (GraphNode node in Triangulation.Graph.Nodes.Except(Triangulation.SuperTriangle))
             {
                 // Create a new voronoi cell, add to list of cells
                 Graph cell = new Graph() { Nuclei = node.Vector };
