@@ -97,7 +97,7 @@ namespace Graph2D
 
         public override string ToString()
         {
-            return "GraphNode: " + Vector.ToString();
+            return "[x: " + Vector.x + ", y: " + Vector.y + "]";
         }
     }
 }
