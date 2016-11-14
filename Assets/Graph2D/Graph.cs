@@ -51,9 +51,9 @@ namespace Graph2D
                 GraphNode b = Nodes[mesh.triangles[i + 1]];
                 GraphNode c = Nodes[mesh.triangles[i + 2]];
 
-                GraphEdge ab = CreateEdge(a, b);
-                GraphEdge ac = CreateEdge(a, c);
-                GraphEdge bc = CreateEdge(b, c);
+                GraphEdge ab = a.GetEdge(b) ?? CreateEdge(a, b);
+                GraphEdge ac = a.GetEdge(c) ?? CreateEdge(a, c);
+                GraphEdge bc = b.GetEdge(c) ?? CreateEdge(b, c);
 
                 DefineTriangle(ab, ac, bc);
             }
