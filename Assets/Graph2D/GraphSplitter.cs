@@ -72,7 +72,7 @@ namespace Graph2D
 
             // No intersection - aka Triangle is INSIDE the clip edge - Cut / Paste triangle to insideGraph:
             if (outsideNodes.Length == 0)
-                MoveTriangleToInsideGraph(triangle);
+                MoveTriangleToInsideGraph(triangle, insideNodes, onEdgeNodes);
 
             // Also no intersection
             else if (insideNodes.Length == 0) { /* Nothing - triangle already exists in outside graph */ }
@@ -196,8 +196,6 @@ namespace Graph2D
                                                                         insideNodes, onEdgeNodes, outsideNodes,
                                                                         clipEdgePoint1, clipEdgePoint2);
 
-            // Create triangle in THIS graph (outside, intersection, intersection)
-
             // TODO: Error here! No edge between two of the nodes
             outside.DefineTriangle(intersectionNodes[0], intersectionNodes[1], outsideNodes.Single());
 
@@ -215,14 +213,14 @@ namespace Graph2D
         {
             // Get node opposite to first node
             GraphNode oppositeNode = null;
-            foreach (GraphNode node in holeNodes.Where(n => n != holeNodes.First()))    // Check all nodes except first node
+            foreach (GraphNode node in holeNodes.Skip(1))    // Check all nodes except first node
                 if (!holeNodes.First().HasEdge(node)) oppositeNode = node;
 
             // Create edge between first node and opposite node
             GraphEdge intersectingEdge = outside.CreateEdge(holeNodes.First(), oppositeNode);
 
             // Create triangle between intersecting edge and other nodes in enumeration
-            foreach (GraphNode node in holeNodes.Where(n => n != holeNodes.First() && n != oppositeNode))   // Check all nodes except first and opposite
+            foreach (GraphNode node in holeNodes.Skip(1).Where(n => n != oppositeNode))   // Check all nodes except first and opposite
                 outside.CreateTriangle(intersectingEdge, node);
         }
 
@@ -236,10 +234,10 @@ namespace Graph2D
 
             // Create edges where necessary
             GraphEdge insideAB = inside.CreateEdge(insideA, insideB);
-            GraphEdge insideAC = insideA.HasEdge(insideC) ? insideA.GetEdge(insideC) : inside.CreateEdge(insideA, insideC);
-            GraphEdge insideAD = insideA.HasEdge(insideD) ? insideA.GetEdge(insideD) : inside.CreateEdge(insideA, insideD);
-            GraphEdge insideBD = insideB.HasEdge(insideD) ? insideB.GetEdge(insideD) : inside.CreateEdge(insideB, insideD);
-            GraphEdge insideCD = insideC.HasEdge(insideD) ? insideC.GetEdge(insideD) : inside.CreateEdge(insideC, insideD);
+            GraphEdge insideAC = insideA.GetEdge(insideC) ?? inside.CreateEdge(insideA, insideC);
+            GraphEdge insideAD = insideA.GetEdge(insideD) ?? inside.CreateEdge(insideA, insideD);
+            GraphEdge insideBD = insideB.GetEdge(insideD) ?? inside.CreateEdge(insideB, insideD);
+            GraphEdge insideCD = insideC.GetEdge(insideD) ?? inside.CreateEdge(insideC, insideD);
 
             // Define triangles
             inside.DefineTriangle(insideAB, insideAD, insideBD);
@@ -272,7 +270,12 @@ namespace Graph2D
                 foreach (GraphNode insideNode in insideNodes)   // One or two insideNodes
                 {
                     // IF EDGE HAS ALREADY BEEN CLIPPED... (by a different triangle)
-                    GraphEdge clippedEdge = outsideNode.GetEdge(insideNode);
+                    GraphEdge clippedEdge = insideNode.GetEdge(outsideNode);
+                    if (clippedEdge == null)
+                    {
+                        int g = 5;
+                    }
+
                     if (truncatedEdgeCatalogue.ContainsKey(clippedEdge))        // Check catalogue of already clipped edges
                     {
                         // Get the new edges intersection node, add to array
@@ -303,10 +306,17 @@ namespace Graph2D
             return intersectionNodes;
         }
 
-        private static void MoveTriangleToInsideGraph(GraphTriangle outsideTriangle)
+        private static void MoveTriangleToInsideGraph(GraphTriangle outsideTriangle, GraphNode[] insideNodes, GraphNode[] onEdgeNodes)
         {
             CreateTriangleInInsideGraph(outsideTriangle.Nodes[0], outsideTriangle.Nodes[1], outsideTriangle.Nodes[2]);
             outside.Remove(outsideTriangle);
+
+            // Mark onEdgeNodes for deletion if they are not in use by another triangle
+            foreach (GraphNode onEdgeNode in onEdgeNodes)
+                if (onEdgeNode.Triangles.Count == 0) transferedNodes.Add(onEdgeNode);
+
+            // Mark inside nodes for deletion
+            transferedNodes.AddRange(insideNodes);
         }
 
         private static GraphNode[] CreateTriangleInInsideGraph(GraphNode outsideA, GraphNode outsideB, GraphNode outsideC)
