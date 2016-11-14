@@ -52,14 +52,8 @@ namespace Graph2D
             Edges = new GraphEdge[] { a, b, c };
             Nodes = a.Nodes.Union(b.Nodes).Union(c.Nodes).Distinct().ToArray();    // Get each unique node entry, convert to array
 
-            // Check that there are edges connecting all the nodes
-            if (Edges.Contains(null) || 
-                Nodes.Contains(null) || 
-                Nodes.Length != 3 || 
-                Nodes[0].Equals(Nodes[1]) || 
-                Nodes[1].Equals(Nodes[2]) || 
-                Nodes[0].Equals(Nodes[2]))
-                throw new ArgumentException("Nodes and edges do not constitute a triangle");
+            // Check the triangle is valid
+            Validate();
         }
         
         public void OrderNodes()
@@ -161,6 +155,34 @@ namespace Graph2D
                 Nodes[0].Vector.ToString() + " -> " + 
                 Nodes[1].Vector.ToString() + " -> " + 
                 Nodes[2].Vector.ToString();
+        }
+
+        private void Validate()
+        {
+            // Null check
+            if (Edges.Contains(null) || Nodes.Contains(null))
+                throw new ArgumentException("Triangle contains null node(s) or edge(s)");
+
+            // Count check
+            if (Nodes.Length != 3 || Edges.Length != 3)
+                throw new ArgumentException("Triangle doesn't contain 3 nodes or 3 edges. Node count: " + Nodes.Length + ", Edge count: " + Edges.Length);
+
+            for (int i = 0; i < Nodes.Length - 1; i++)
+            {
+                for (int j = i + 1; j < Nodes.Length; j++)
+                {
+                    // Duplicate check
+                    if (Nodes[i] == Nodes[j])
+                        throw new ArgumentException("Triangle contains duplicate nodes");
+
+                    // Connecting edge check
+                    if (!Nodes[i].HasEdge(Nodes[j]) || 
+                        !Nodes[j].HasEdge(Nodes[i]))
+                        throw new ArgumentException("Not all nodes in triangle are connected");
+                }
+            }
+
+            /* At this point, the triangle has passed all validity tests! */
         }
     }
 }
