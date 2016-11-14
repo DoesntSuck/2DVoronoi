@@ -16,6 +16,7 @@ namespace Assets
         public float Radius;
         public int ChunkCount;
 
+        private Vector2[] points;
         private VoronoiTessellation voronoi;
         private MeshFilter meshFilter;
         private Vector3 clickPosition;
@@ -39,7 +40,7 @@ namespace Assets
                 clickPosition = hitInfo.point;
 
                 // Generate 'Count' number of random Vectors that tend towards Origin
-                Vector2[] points = new Vector2[ChunkCount];
+                points = new Vector2[ChunkCount];
                 for (int i = 0; i < ChunkCount; i++)
                 {
                     Vector2 point = MathExtension.RandomVectorFromTriangularDistribution(clickPosition, Radius);
@@ -49,7 +50,7 @@ namespace Assets
                     points[i] = point;
                 }
 
-                Break(points);
+                Break();
             }
         }
 
@@ -73,32 +74,50 @@ namespace Assets
 
         // TODO: Send original mesh through Mesh clipper, so the REMAINS of it can be calculated
 
-        void Break(Vector2[] points)
+        void Break()
         {
+            GetComponent<Collider2D>().enabled = false;
+            GetComponent<MeshRenderer>().enabled = false;
+
             voronoi = new VoronoiTessellation();
             voronoi.Insert(points);
 
             // This is the graph that will be clipped, after being clipped this graph stores the area of graph inside the Voronoi cell
             Graph clipGraph = new Graph(meshFilter.mesh);
 
-            foreach (Graph clipCell in voronoi.Cells)
+            for (int i = 3; i < 7; i++)
             {
                 // Each clip creates a new graph
                 Graph outside;
                 Graph inside;
-                GraphClipper.Clip(clipGraph, clipCell, clipCell.Nuclei, out inside, out outside);
+                GraphClipper.Clip(clipGraph, voronoi.Cells[i], voronoi.Cells[i].Nuclei, out inside, out outside);
 
                 // Instantiate 
-                GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
+                GameObject chunk = GameObject.CreatePrimitive(PrimitiveType.Quad);
                 chunk.GetComponent<MeshFilter>().mesh = inside.ToMesh("Clipped Mesh");
-                chunk.GetComponent<PolygonCollider2D>().points = inside.OutsideNodes().Select(n => n.Vector).ToArray();
+                DestroyImmediate(chunk.GetComponent<MeshCollider>());
+                //chunk.AddComponent<PolygonCollider2D>().points = inside.OutsideNodes().Select(n => n.Vector).ToArray();
 
                 // The remains is clipped next
                 clipGraph = outside;
             }
 
-            GetComponent<Collider2D>().enabled = false;
-            gameObject.SetActive(false);
+            //foreach (Graph clipCell in voronoi.Cells)
+            //{
+            //    // Each clip creates a new graph
+            //    Graph outside;
+            //    Graph inside;
+            //    GraphClipper.Clip(clipGraph, clipCell, clipCell.Nuclei, out inside, out outside);
+
+            //    // Instantiate 
+            //    GameObject chunk = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            //    chunk.GetComponent<MeshFilter>().mesh = inside.ToMesh("Clipped Mesh");
+            //    DestroyImmediate(chunk.GetComponent<MeshCollider>());
+            //    //chunk.AddComponent<PolygonCollider2D>().points = inside.OutsideNodes().Select(n => n.Vector).ToArray();
+
+            //    // The remains is clipped next
+            //    clipGraph = outside;
+            //}
         }
     }
 }

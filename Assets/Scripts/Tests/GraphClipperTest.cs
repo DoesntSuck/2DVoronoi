@@ -1,26 +1,32 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 using Graph2D;
 using System.Linq;
 
 public class GraphClipperTest : MonoBehaviour
 {
-    public Transform clipShape1Parent;
-    public Transform clipShape2Parent;
-    public Transform inside1;
-    public Transform inside2;
-
     Mesh mesh;
-    public Transform[] edgeHandles1;
-    public Transform[] edgeHandles2;
-    Graph clipGraph1;
-    Graph clipGraph2;
+    List<Transform[]> edgeHandles;
+    List<Transform> nuclei;
+    List<Graph> clipGraphs;
 
     void Awake()
     {
-        // Get all child transforms, excluding this one.
-        edgeHandles1 = clipShape1Parent.GetComponentsInChildren<Transform>().Where(t => t != clipShape1Parent).ToArray();
-        edgeHandles2 = clipShape2Parent.GetComponentsInChildren<Transform>().Where(t => t != clipShape2Parent).ToArray();
+        edgeHandles = new List<Transform[]>();
+        nuclei = new List<Transform>();
+
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Transform child = transform.GetChild(i);
+            if (child.gameObject.activeSelf)
+            {
+                IEnumerable<Transform> grandChildren = child.GetComponentsInChildren<Transform>().Where(t => t != child);
+
+                edgeHandles.Add(grandChildren.Skip(1).ToArray());
+                nuclei.Add(grandChildren.First());
+            }
+        }
+
         CreateClipGraphs();
     }
 
@@ -33,72 +39,61 @@ public class GraphClipperTest : MonoBehaviour
 
             // Get mesh, convert to graph
             mesh = GetComponent<MeshFilter>().mesh;
-
             Graph original = new Graph(mesh);
             Graph insideGraph;
-            Graph outsideGraph;
-            GraphClipper.Clip(original, clipGraph1, inside1.position, out insideGraph, out outsideGraph);
+            Graph outsideGraph = original;
 
-            CreateGameObject(insideGraph);
-            //CreateGameObject(outsideGraph);
+            foreach (Graph clipGraph in clipGraphs)
+            {
+                GraphClipper.Clip(outsideGraph, clipGraph, clipGraph.Nuclei, out insideGraph, out outsideGraph);
+                CreateGameObject(insideGraph);
+            }
 
-            // Second clip
-            GraphClipper.Clip(outsideGraph, clipGraph2, inside2.position, out insideGraph, out outsideGraph);
-
-            CreateGameObject(insideGraph);
+            // TODO: after one shape clip, the graph has duplicate nodes.... maybe stitch is incorrect
             CreateGameObject(outsideGraph);
         }
     }
 
     void OnDrawGizmos()
     {
-        if (inside1 != null) Gizmos.DrawSphere(inside1.position, 0.01f);
-        if (inside2 != null) Gizmos.DrawSphere(inside2.position, 0.01f);
+        Gizmos.color = Color.red;
 
-        if (clipShape1Parent != null)
+        for (int i = 0; i < transform.childCount; i++)
         {
-            edgeHandles1 = clipShape1Parent.GetComponentsInChildren<Transform>().Where(t => t != clipShape1Parent).ToArray();
+            Transform child = transform.GetChild(i);
+            if (child.gameObject.activeSelf)
+            {
+                Transform[] grandChildren = child.GetComponentsInChildren<Transform>().Where(t => t != child).ToArray();
 
-            // Draw edge
-            Gizmos.color = Color.red;
-            for (int i = 0; i < edgeHandles1.Length; i++)
-                Gizmos.DrawLine(edgeHandles1[i].position, edgeHandles1[(i + 1) % edgeHandles1.Length].position);
-        }
+                Gizmos.DrawSphere(grandChildren.First().position, 0.01f);
 
-        if (clipShape2Parent != null)
-        {
-            edgeHandles2 = clipShape2Parent.GetComponentsInChildren<Transform>().Where(t => t != clipShape2Parent).ToArray();
+                grandChildren = grandChildren.Skip(1).ToArray();
 
-            // Draw edge
-            Gizmos.color = Color.red;
-            for (int i = 0; i < edgeHandles2.Length; i++)
-                Gizmos.DrawLine(edgeHandles2[i].position, edgeHandles2[(i + 1) % edgeHandles2.Length].position);
+                // Draw edge
+                for (int j = 0; j < grandChildren.Length; j++)
+                    Gizmos.DrawLine(grandChildren[j].position, grandChildren[(j + 1) % grandChildren.Length].position);
+            }
         }
     }
 
     void CreateClipGraphs()
     {
-        clipGraph1 = new Graph();
-        for (int i = 0; i < edgeHandles1.Length - 1; i++)
+        clipGraphs = new List<Graph>(edgeHandles.Count);
+        for (int i = 0; i < edgeHandles.Count; i++)
         {
-            GraphNode node1 = clipGraph1.CreateNode(edgeHandles1[i].position);
-            GraphNode node2 = clipGraph1.CreateNode(edgeHandles1[i + 1].position);
+            Graph graph = new Graph();
+            graph.Nuclei = nuclei[i].position;
+            for (int j = 0; j < edgeHandles[i].Length - 1; j++)
+            {
+                GraphNode node1 = graph.CreateNode(edgeHandles[i][j].position);
+                GraphNode node2 = graph.CreateNode(edgeHandles[i][j + 1].position);
 
-            clipGraph1.CreateEdge(node1, node2);  
+                graph.CreateEdge(node1, node2);
+            }
+            graph.CreateEdge(graph.Nodes.Last(), graph.Nodes.First());
+
+            clipGraphs.Add(graph);
         }
-
-        clipGraph1.CreateEdge(clipGraph1.Nodes.Last(), clipGraph1.Nodes.First());
-
-        clipGraph2 = new Graph();
-        for (int i = 0; i < edgeHandles2.Length - 1; i++)
-        {
-            GraphNode node1 = clipGraph2.CreateNode(edgeHandles2[i].position);
-            GraphNode node2 = clipGraph2.CreateNode(edgeHandles2[i + 1].position);
-
-            clipGraph2.CreateEdge(node1, node2);
-        }
-
-        clipGraph2.CreateEdge(clipGraph2.Nodes.Last(), clipGraph2.Nodes.First());
     }
 
     void CreateGameObject(Graph graph)
