@@ -126,8 +126,8 @@ namespace Graph2D
             GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
 
             // REMEMBER stitch line node duplicates
-            if (!splitNodes.ContainsKey(intersectionNodes[0])) splitNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
-            if (!splitNodes.ContainsKey(intersectionNodes[1])) splitNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
+            if (!splitNodes.ContainsKey(insideTriangleNodes[0])) splitNodes.Add(insideTriangleNodes[0], intersectionNodes[0]);
+            if (!splitNodes.ContainsKey(insideTriangleNodes[1])) splitNodes.Add(insideTriangleNodes[1], intersectionNodes[1]);
 
 
             outside.Remove(triangle);
@@ -165,8 +165,8 @@ namespace Graph2D
             GraphNode[] insideTriangleNodes = CreateTriangleInInsideGraph(intersectionNodes[0], intersectionNodes[1], insideNodes.Single());
 
             // Stitch nodes
-            if (!splitNodes.ContainsKey(intersectionNodes[0])) splitNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
-            if (!splitNodes.ContainsKey(intersectionNodes[1])) splitNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
+            if (!splitNodes.ContainsKey(insideTriangleNodes[0])) splitNodes.Add(insideTriangleNodes[0], intersectionNodes[0]);
+            if (!splitNodes.ContainsKey(insideTriangleNodes[1])) splitNodes.Add(insideTriangleNodes[1], intersectionNodes[1]);
 
             outside.Remove(triangle);
         }
@@ -203,8 +203,8 @@ namespace Graph2D
             GraphNode[] insideTriangleNodes = TriangulateHoleInInsideGraph(intersectionNodes, insideNodes);
 
             // Stitch nodes
-            if (!splitNodes.ContainsKey(intersectionNodes[0])) splitNodes.Add(intersectionNodes[0], insideTriangleNodes[0]);
-            if (!splitNodes.ContainsKey(intersectionNodes[1])) splitNodes.Add(intersectionNodes[1], insideTriangleNodes[1]);
+            if (!splitNodes.ContainsKey(insideTriangleNodes[0])) splitNodes.Add(insideTriangleNodes[0], intersectionNodes[0]);
+            if (!splitNodes.ContainsKey(insideTriangleNodes[1])) splitNodes.Add(insideTriangleNodes[1], intersectionNodes[1]);
 
             outside.Remove(triangle);
         }

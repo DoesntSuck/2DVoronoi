@@ -24,6 +24,8 @@ namespace Graph2D
         /// </summary>
         public HashSet<GraphTriangle> Triangles { get; private set; }
 
+        public int id { get; private set; }
+
         /// <summary>
         /// A node containing the given vector
         /// </summary>
@@ -32,6 +34,7 @@ namespace Graph2D
             Vector = vector;
             Edges = new List<GraphEdge>();
             Triangles = new HashSet<GraphTriangle>();
+            id = GetHashCode();
         }
 
         /// <summary>
@@ -97,7 +100,7 @@ namespace Graph2D
 
         public override string ToString()
         {
-            return "[x: " + Vector.x + ", y: " + Vector.y + "]";
+            return "[" + Vector.x + ", " + Vector.y + "]";
         }
     }
 }

@@ -266,7 +266,10 @@ namespace Graph2D
         // Keys = node in THIS graph - Values = node in OTHER graph
         public void Stitch(Graph other, Dictionary<GraphNode, GraphNode> stitchNodes)
         {
-            //Nodes.AddRange(other.Nodes.Except(stitchNodes.Values.Where(n => Nodes.Contains(n))));         // Add non-duplicate nodes
+            GraphNode[] nonDuplicateNodes = other.Nodes.Except(stitchNodes.Values).ToArray();
+
+
+             Nodes.AddRange(other.Nodes.Except(stitchNodes.Values.Where(n => Nodes.Contains(n))));         // Add non-duplicate nodes
 
             Nodes.AddRange(other.Nodes.Except(stitchNodes.Values));                                       // Add non-duplicate nodes
             Edges.AddRange(other.Edges.Where(e => e.Nodes.Intersect(stitchNodes.Values).Count() != 2));   // Add non-duplicate edges
