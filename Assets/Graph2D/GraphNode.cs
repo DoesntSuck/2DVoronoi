@@ -93,9 +93,21 @@ namespace Graph2D
             return false;
         }
 
-        public bool Equals(GraphNode other)
+        public void Switch(GraphNode replacement)
         {
-            return Vector.Equals(other.Vector);
+            foreach (GraphEdge edge in Edges)
+            {
+                int index = edge.GetNodeIndex(this);
+                edge.Nodes[index] = replacement;
+                replacement.Edges.Add(edge);
+            }
+
+            foreach (GraphTriangle triangle in Triangles)
+            {
+                int index = triangle.GetNodeIndex(this);
+                triangle.Nodes[index] = replacement;
+                replacement.Triangles.Add(triangle);
+            }
         }
 
         public override string ToString()

@@ -22,10 +22,13 @@ namespace Graph2D
             piecesSplitNodes = new List<Dictionary<GraphNode, GraphNode>>();
 
             SplitIntoChunks(graph, convexPolygon, nuclei);
+            inside = pieces.Last();
+
+            // Remove the last one, its the inside piece! Stitch the remainder back together
+            pieces.RemoveAt(pieces.Count - 1);
             StitchChunksTogether();
 
-            inside = pieces.Last();
-            outside = pieces[pieces.Count - 2];
+            outside = pieces.Last();
         }
 
         private static void SplitIntoChunks(Graph graph, Graph convexPolygon, Vector2 nuclei)
@@ -50,8 +53,10 @@ namespace Graph2D
 
         private static void StitchChunksTogether()
         {
-            for (int i = 0; i < pieces.Count - 2; i++)
+            for (int i = 1; i < pieces.Count - 1; i++)
                 pieces[i + 1].Stitch(pieces[i], piecesSplitNodes[i]);
+
+            pieces.Last().Stitch(pieces.First(), piecesSplitNodes.First());
         }
     }
 }

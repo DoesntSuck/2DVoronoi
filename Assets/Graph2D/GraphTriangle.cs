@@ -19,6 +19,8 @@ namespace Graph2D
         /// </summary>
         public GraphEdge[] Edges { get; private set; }
 
+        public int id { get; private set; }
+
         /// <summary>
         /// The circle that touches all three points of this triangle
         /// </summary>
@@ -51,6 +53,7 @@ namespace Graph2D
         {
             Edges = new GraphEdge[] { a, b, c };
             Nodes = a.Nodes.Union(b.Nodes).Union(c.Nodes).Distinct().ToArray();    // Get each unique node entry, convert to array
+            id = GetHashCode();
 
             // Check the triangle is valid
             Validate();
@@ -147,6 +150,19 @@ namespace Graph2D
 
             // No edges were shared
             return false;
+        }
+
+        public int GetNodeIndex(GraphNode node)
+        {
+            for (int i = 0; i < Nodes.Length; i++)
+                if (node == Nodes[i]) return i;
+
+            return -1;
+        }
+
+        public GraphEdge[] GetEdges(GraphNode node)
+        {
+            return Edges.Where(e => e.Contains(node)).ToArray();
         }
 
         public override string ToString()

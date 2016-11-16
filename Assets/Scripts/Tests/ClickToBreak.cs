@@ -85,7 +85,7 @@ namespace Assets
             // This is the graph that will be clipped, after being clipped this graph stores the area of graph inside the Voronoi cell
             Graph clipGraph = new Graph(meshFilter.mesh);
 
-            for (int i = 3; i < 7; i++)
+            for (int i = 0; i < voronoi.Cells.Count; i++)
             {
                 // Each clip creates a new graph
                 Graph outside;

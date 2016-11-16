@@ -19,6 +19,8 @@ namespace Graph2D
         /// </summary>
         public HashSet<GraphTriangle> Triangles { get; private set; }
 
+        public int id { get; private set; }
+
         /// <summary>
         /// An edge connecting the given nodes
         /// </summary>
@@ -26,6 +28,7 @@ namespace Graph2D
         {
             Nodes = new GraphNode[] { node1, node2 };
             Triangles = new HashSet<GraphTriangle>();
+            id = GetHashCode();
         }
 
         /// <summary>
@@ -61,6 +64,14 @@ namespace Graph2D
             return false;
         }
 
+        public bool ContainsAny(IEnumerable<GraphNode> nodes)
+        {
+            foreach (GraphNode node in nodes)
+                if (Contains(node)) return true;
+
+            return false;
+        }
+
         /// <summary>
         /// Gets the opposing node to the given node
         /// </summary>
@@ -74,6 +85,36 @@ namespace Graph2D
 
             // Node is not contained in this edge, throw an exception
             else throw new ArgumentException("Node is not part of this edge");
+        }
+
+        public int GetNodeIndex(GraphNode node)
+        {
+            for (int i = 0; i < Nodes.Length; i++)
+                if (node == Nodes[i]) return i;
+
+            return -1;
+        }
+
+        public void SetNodeAtIndex(GraphNode node, int index)
+        {
+            // Get each edge attached to CURRENT node
+            foreach (GraphEdge edge in Nodes[index].Edges.Where(e => e != this))
+            {
+                // Change ref to the NEW node
+                int nodeIndex = edge.GetNodeIndex(Nodes[index]);
+                if (nodeIndex > -1) edge.Nodes[nodeIndex] = node;
+            }
+
+            // Get each triangle attached to CURRENT node
+            foreach (GraphTriangle triangle in Nodes[index].Triangles)
+            {
+                // Change ref to the NEW node
+                int nodeIndex = triangle.GetNodeIndex(Nodes[index]);
+                if (nodeIndex > -1) triangle.Nodes[nodeIndex] = node;
+            }
+
+            // Update this edge's nodes
+            Nodes[index] = node;
         }
 
         public override string ToString()
