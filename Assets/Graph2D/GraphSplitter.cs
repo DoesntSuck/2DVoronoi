@@ -25,6 +25,7 @@ namespace Graph2D
 
         private static Dictionary<GraphNode, GraphNode> splitNodes;
 
+        private static List<GraphEdge> transferedEdges;
         private static List<GraphNode> transferedNodes;
 
         /// <summary>
@@ -308,12 +309,53 @@ namespace Graph2D
 
         private static void MoveTriangleToInsideGraph(GraphTriangle outsideTriangle, GraphNode[] insideNodes, GraphNode[] onEdgeNodes)
         {
+            // Add nodes if they haven't already been added
+            // Add edges if they haven't already been added
+
+            inside.Triangles.Add(outsideTriangle);
+            outside.Remove(outsideTriangle);
+
+            // Need to decide whether or not to duplicate onEdge nodes
+                // Duplicate if the node is going to be in use by a triangle from the outside graph
+            
+            // THIS:
+            // Duplicate regardless.... Check if original is needed, later.
+            // Maintain a set, or list of nodes added to inside, if an onEdge node is present in an outside triangle, remove it from the collection
+            // NEED TO REPLACE THE DUPLICATE WITH THE ORIGINAL IF THERE ARE NO OUTSIDE TRIANGLES USING IT... do at the end
+
+
+            // Add onEdge nodes to inside graph regardless of whether they are in use by outsideGraph triangle.
+            // ALSO KEEP THEM IN THE OUTSIDE GRAPH
+            // When iterating through all triangles....
+                // If insideNodes == 0;
+                    // check for onEdge nodes that need to be duplicated
+
+            // Will also need to preform the same check here
+
             CreateTriangleInInsideGraph(outsideTriangle.Nodes[0], outsideTriangle.Nodes[1], outsideTriangle.Nodes[2]);
             outside.Remove(outsideTriangle);
 
             // Mark onEdgeNodes for deletion if they are not in use by another triangle
             foreach (GraphNode onEdgeNode in onEdgeNodes)
                 if (onEdgeNode.Triangles.Count == 0) transferedNodes.Add(onEdgeNode);
+
+            // Mark inside nodes for deletion
+            transferedNodes.AddRange(insideNodes);
+        }
+
+        private static void MoveTriangleToInsideGraph(GraphTriangle outsideTriangle, GraphNode[] insideNodes, GraphNode[] onEdgeNodes)
+        {
+            CreateTriangleInInsideGraph(outsideTriangle.Nodes[0], outsideTriangle.Nodes[1], outsideTriangle.Nodes[2]);
+            outside.Remove(outsideTriangle);
+
+            // Mark onEdgeNodes for deletion if they are not in use by another triangle
+            foreach (GraphNode onEdgeNode in onEdgeNodes)
+            {
+                if (onEdgeNode.Triangles.Count == 0)
+                {
+                    transferedNodes.Add(onEdgeNode);
+                }
+            }
 
             // Mark inside nodes for deletion
             transferedNodes.AddRange(insideNodes);
