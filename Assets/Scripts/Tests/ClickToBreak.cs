@@ -2,6 +2,7 @@
 using System.Linq;
 using Graph2D;
 using UnityEditor;
+using System.Collections.Generic;
 
 // TODO: Adjust chunk mesh vertices by nuclei position: nuclei is now the chunks position
 
@@ -67,24 +68,46 @@ namespace Assets
             }
         }
 
-        // TODO: Send original mesh through Mesh clipper, so the REMAINS of it can be calculated
+        public List<GameObject> BreakAbout(Vector2 point)
+        {
+            // Set Origin to click location
+            clickPosition = point;
 
-        void Break(Vector2[] points)
+            // Generate 'Count' number of random Vectors that tend towards Origin
+            Vector2[] points = new Vector2[ChunkCount];
+            for (int i = 0; i < ChunkCount; i++)
+            {
+                Vector2 randomPoint = MathExtension.RandomVectorFromTriangularDistribution(clickPosition, Radius);
+                while (!collider.OverlapPoint(randomPoint))
+                    randomPoint = MathExtension.RandomVectorFromTriangularDistribution(clickPosition, Radius);
+
+                points[i] = randomPoint;
+            }
+
+            List<GameObject> chunks = Break(points);
+            return chunks;
+        }
+
+        List<GameObject> Break(Vector2[] points)
         {
             voronoi = new VoronoiTessellation();
             voronoi.Insert(points);
 
+            List<GameObject> chunks = new List<GameObject>();
             foreach (Graph clipCell in voronoi.Cells)
             {
                 Graph clippedGraph = MeshClipper.ClipAsGraph(meshFilter.mesh, clipCell);
 
                 GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
+                chunks.Add(chunk);
                 chunk.GetComponent<MeshFilter>().mesh = clippedGraph.ToMesh("Clipped Mesh");
                 chunk.GetComponent<PolygonCollider2D>().points = clippedGraph.OutsideNodes().Select(n => n.Vector).ToArray();
             }
 
             GetComponent<Collider2D>().enabled = false;
             gameObject.SetActive(false);
+
+            return chunks;
         }
     }
 }
