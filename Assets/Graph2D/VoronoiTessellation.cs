@@ -35,6 +35,7 @@ namespace Graph2D
         /// The cells in this Voronoi Tesellation. Calculated as the dual graph of the Delaunay triangulation
         /// </summary>
         public List<Graph> Cells { get { return cells.Where(c => c.Edges.Count > 2 && c.Nodes.Count > 2).ToList(); } }
+        
         /// <summary>
         /// Inserts the given nuclei into this Voronoi tesellation, recaclulating the nuclei cells.
         /// </summary>
@@ -49,7 +50,7 @@ namespace Graph2D
         }
 
         /// <summary>
-        /// Inserts the given nucleus into this Voronoi tesellation, recalculating the cells. If in serting multiple
+        /// Inserts the given nucleus into this Voronoi tesellation, recalculating the cells. If inserting multiple
         /// nuclei it is recommended to insert them all at once.
         /// </summary>
         public void Insert(Vector2 nucleus)

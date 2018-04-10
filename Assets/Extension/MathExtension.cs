@@ -240,7 +240,7 @@ namespace UnityEngine
 
             double radius = Vector2d.Distance(centre, abMid);
 
-            Circle incircle = new Circle(centre.x, centre.y, radius);
+            Circle incircle = new Circle((float)centre.x, (float)centre.y, (float)radius);
 
             return incircle;
         }
@@ -256,7 +256,7 @@ namespace UnityEngine
             // Distance from circumcentre to position vector a (double precision)
             double distanceOA = Vector2d.Distance(circumcentre, a);
 
-            return new Circle(circumcentre.x, circumcentre.y, distanceOA);
+            return new Circle((float)circumcentre.x, (float)circumcentre.y, (float)distanceOA);
         }
 
         /// <summary>

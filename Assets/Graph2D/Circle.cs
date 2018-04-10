@@ -11,21 +11,16 @@ namespace Graph2D
         /// <summary>
         /// The centre of this circle in 2d space with floating point precision
         /// </summary>
-        public Vector2 Centre { get { return new Vector2((float)Centre2d.x, (float)Centre2d.y); } }
+        public Vector2 Centre { get; private set; }
 
         /// <summary>
         /// The radius of this circle with double point precision
         /// </summary>
-        public double Radius { get; set; }
+        public float Radius { get; set; }
 
-        /// <summary>
-        /// The centre of this circle in 2d space with double point precision
-        /// </summary>
-        private Vector2d Centre2d;
-
-        public Circle(double x, double y, double radius)
+        public Circle(float x, float y, float radius)
         {
-            Centre2d = new Vector2d(x, y);
+            Centre = new Vector2(x, y);
             Radius = radius;
         }
 
@@ -34,14 +29,11 @@ namespace Graph2D
         /// </summary>
         public bool Contains(Vector2 point)
         {
-            // Convert point to double precision
-            Vector2d point2d = new Vector2d(point.x, point.y);
-
             // Calculate distance
-            double distance = Vector2d.Distance(Centre2d, point2d);
+            float distance = Vector2.Distance(Centre, point);
 
             // Also check if numbers are similar enough to each other (due to rounding inaccuracies) to be considered the same number
-            bool similarEnough = Mathd.Approximately(distance, Radius);
+            bool similarEnough = Mathf.Approximately(distance, Radius);
 
             // If point is inside, on, or close enough to radius of circle
             return distance <= Radius || similarEnough;

@@ -25,8 +25,9 @@ namespace Graph2D
         /// </summary>
         public Circle Circumcircle
         {
-            get     // Lazy initialisation of circumcircle
+            get     
             {
+                // Lazy initialisation of circumcircle
                 if (circumcircle == null)
                     circumcircle = MathExtension.Circumcircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
                 return circumcircle;
@@ -34,10 +35,14 @@ namespace Graph2D
         }
         private Circle circumcircle;
 
+        /// <summary>
+        /// Gets the maximum circle confined to all three edges of the triangle
+        /// </summary>
         public Circle Incircle
         {
             get
             {
+                // Lazy initialisation of incircle
                 if (incircle == null)
                     incircle = MathExtension.Incircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
                 return incircle;

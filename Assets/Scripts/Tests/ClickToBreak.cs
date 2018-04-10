@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Linq;
+using System.Collections.Generic;
 using Graph2D;
 using UnityEditor;
 
@@ -74,9 +75,15 @@ namespace Assets
             voronoi = new VoronoiTessellation();
             voronoi.Insert(points);
 
+            // Clip mesh for each voronoi cell
             foreach (Graph clipCell in voronoi.Cells)
             {
-                Graph clippedGraph = MeshClipper.ClipAsGraph(meshFilter.mesh, clipCell);
+                Graph clippedGraph = meshFilter.mesh.ToGraph();
+
+                // Flatten edge collection into list of vectors to use as edge points
+                List<Vector2> edgePoints = clipCell.Edges.SelectMany(e => e.Nodes.Select(n => n.Vector)).ToList();
+
+                GraphClipper.Clip(clippedGraph, edgePoints, clipCell.Nuclei);
 
                 GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
                 chunk.GetComponent<MeshFilter>().mesh = clippedGraph.ToMesh("Clipped Mesh");
