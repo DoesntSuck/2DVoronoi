@@ -26,7 +26,7 @@ namespace Assets
             // Create Voronoi cells from child transform positions as nuclei
             Vector2[] nuclei = children.Select(c => (Vector2)c.position).ToArray();
 
-            voronoi = new VoronoiTessellation(MathExtension.BoundingCircle(nuclei));
+            voronoi = new VoronoiTessellation(Geometry.BoundingCircle(nuclei));
             voronoi.Insert(nuclei);
         }
 

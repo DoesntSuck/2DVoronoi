@@ -28,7 +28,7 @@ namespace Graph2D
                 Vector2 b = edgePoints[i + 1];
 
                 // Which side of edge is counted as being inside?
-                float inside = MathExtension.Side(a, b, nuclei);
+                float inside = Geometry.Side(a, b, nuclei);
 
                 // Clip edges that aren't inside of line
                 Clip(graph, a, b, inside);
@@ -161,7 +161,7 @@ namespace Graph2D
                         else // EDGE HAS NOT BEEN CLIPPED YET...
                         {
                             // Calculate the intersection of clip edge and tri-edge
-                            Vector2 intersection = MathExtension.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
+                            Vector2 intersection = Geometry.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
 
                             // Create node at intersection, remember node
                             GraphNode intersectionNode = graph.CreateNode(intersection);
@@ -219,7 +219,7 @@ namespace Graph2D
                         else // EDGE HAS NOT BEEN CLIPPED YET...
                         {
                             // Calculate the intersection of clip edge and tri-edge
-                            Vector2 intersection = MathExtension.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
+                            Vector2 intersection = Geometry.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
 
                             // Create node at intersection, remember node
                             GraphNode intersectionNode = graph.CreateNode(intersection);

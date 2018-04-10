@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Graph2D;
 
 [RequireComponent(typeof(Collider))]
 public class PointCloudTest : MonoBehaviour
@@ -24,7 +25,7 @@ public class PointCloudTest : MonoBehaviour
             // Generate 'Count' number of random Vectors that tend towards Origin
             points = new Vector3[Count];
             for (int i = 0; i < Count; i++)
-                points[i] = MathExtension.RandomVectorFromTriangularDistribution(Origin, Radius);
+                points[i] = Geometry.RandomVectorFromTriangularDistribution(Origin, Radius);
         }
     }
 

@@ -7,7 +7,18 @@ namespace Graph2D
 {
     public class VoronoiTessellation
     {
-        private List<Graph> cells;
+        /// <summary>
+        /// The Delaunay Triangulation of which this Voronoi Tessellation is the dual graph.
+        /// </summary>
+        public DelaunayTriangulation Triangulation { get; private set; }
+
+        /// <summary>
+        /// Gets the cells in this Voronoi Tesellation. Calculated as the dual graph 
+        /// of the Delaunay triangulation. Only completed cells are returned.
+        /// </summary>
+        public List<VoronoiCell> Cells { get { return cells.Where(c => c.IsPolygon).ToList(); } }
+
+        private List<VoronoiCell> cells;
 
         /// <summary>
         /// A new Voronoi tesellation with an arbitrarily large bounding triangle.
@@ -25,16 +36,6 @@ namespace Graph2D
         {
             Triangulation = new DelaunayTriangulation(bounds);
         }
-
-        /// <summary>
-        /// The Delaunay Triangulation of which this Voronoi Tessellation is the dual graph.
-        /// </summary>
-        public DelaunayTriangulation Triangulation { get; private set; }
-
-        /// <summary>
-        /// The cells in this Voronoi Tesellation. Calculated as the dual graph of the Delaunay triangulation
-        /// </summary>
-        public List<Graph> Cells { get { return cells.Where(c => c.Edges.Count > 2 && c.Nodes.Count > 2).ToList(); } }
         
         /// <summary>
         /// Inserts the given nuclei into this Voronoi tesellation, recaclulating the nuclei cells.
@@ -70,12 +71,12 @@ namespace Graph2D
             // TODO: Where a cell edge intersects with supertriangle edge, truncate cell edge
 
             // Convert to Voronoi Cells
-            cells = new List<Graph>();
+            cells = new List<VoronoiCell>();
 
             foreach (GraphNode node in Triangulation.Graph.Nodes)
             {
                 // Create a new voronoi cell, add to list of cells
-                Graph cell = new Graph() { Nuclei = node.Vector };
+                VoronoiCell cell = new VoronoiCell(node.Vector);
                 cells.Add(cell);
 
                 // Dictionary to hold association between triangles in delaunay and circumcentre nodes in voronoi cell

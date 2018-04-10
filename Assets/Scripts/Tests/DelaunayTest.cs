@@ -31,7 +31,7 @@ namespace Assets
             // Get transform positions
             Vector2[] vectors = children.Select(c => (Vector2)c.position).ToArray();
 
-            triangulation = new DelaunayTriangulation(MathExtension.BoundingCircle(vectors));
+            triangulation = new DelaunayTriangulation(Geometry.BoundingCircle(vectors));
 
             // Set collider points to the super triangle vectors
             GetComponent<PolygonCollider2D>().points = triangulation.SuperTriangle.Select(n => n.Vector).ToArray();
@@ -92,7 +92,7 @@ namespace Assets
                     // Check each triangle to see if it if the pointer is inside it
                     foreach (GraphTriangle triangle in triangulation.Graph.Triangles)
                     {
-                        if (MathExtension.TriangleContains(hit.point, triangle.Nodes[0].Vector, triangle.Nodes[1].Vector, triangle.Nodes[2].Vector))
+                        if (Geometry.TriangleContains(hit.point, triangle.Nodes[0].Vector, triangle.Nodes[1].Vector, triangle.Nodes[2].Vector))
                             containingTriangles.Add(triangle);
                     }
 

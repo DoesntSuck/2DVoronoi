@@ -29,7 +29,7 @@ namespace Graph2D
             {
                 // Lazy initialisation of circumcircle
                 if (circumcircle == null)
-                    circumcircle = MathExtension.Circumcircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
+                    circumcircle = Geometry.Circumcircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
                 return circumcircle;
             }
         }
@@ -44,7 +44,7 @@ namespace Graph2D
             {
                 // Lazy initialisation of incircle
                 if (incircle == null)
-                    incircle = MathExtension.Incircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
+                    incircle = Geometry.Incircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
                 return incircle;
             }
         }
@@ -146,17 +146,17 @@ namespace Graph2D
 
         public IEnumerable<GraphNode> SameSideNodes(Vector2 edgePoint1, Vector2 edgePoint2, float side)
         {
-            return Nodes.Where(n => MathExtension.Side(edgePoint1, edgePoint2, n.Vector) == side);
+            return Nodes.Where(n => Geometry.Side(edgePoint1, edgePoint2, n.Vector) == side);
         }
 
         public IEnumerable<GraphNode> OpposideSideNodes(Vector2 edgePoint1, Vector2 edgePoint2, float side)
         {
-            return Nodes.Where(n => MathExtension.Side(edgePoint1, edgePoint2, n.Vector) == -side);
+            return Nodes.Where(n => Geometry.Side(edgePoint1, edgePoint2, n.Vector) == -side);
         }
 
         public IEnumerable<GraphNode> OnEdgeNodes(Vector2 edgePoint1, Vector2 edgePoint2)
         {
-            return Nodes.Where(n => MathExtension.Side(edgePoint1, edgePoint2, n.Vector) == 0);
+            return Nodes.Where(n => Geometry.Side(edgePoint1, edgePoint2, n.Vector) == 0);
         }
 
         public override string ToString()

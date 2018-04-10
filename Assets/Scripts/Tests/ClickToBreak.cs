@@ -43,9 +43,9 @@ namespace Assets
                 Vector2[] points = new Vector2[ChunkCount];
                 for (int i = 0; i < ChunkCount; i++)
                 {
-                    Vector2 point = MathExtension.RandomVectorFromTriangularDistribution(clickPosition, Radius);
+                    Vector2 point = Geometry.RandomVectorFromTriangularDistribution(clickPosition, Radius);
                     while (!collider.OverlapPoint(point))
-                        point = MathExtension.RandomVectorFromTriangularDistribution(clickPosition, Radius);
+                        point = Geometry.RandomVectorFromTriangularDistribution(clickPosition, Radius);
 
                     points[i] = point;
                 }
@@ -76,7 +76,7 @@ namespace Assets
             voronoi.Insert(points);
 
             // Clip mesh for each voronoi cell
-            foreach (Graph clipCell in voronoi.Cells)
+            foreach (VoronoiCell clipCell in voronoi.Cells)
             {
                 Graph clippedGraph = meshFilter.mesh.ToGraph();
 
@@ -85,13 +85,30 @@ namespace Assets
 
                 GraphClipper.Clip(clippedGraph, edgePoints, clipCell.Nuclei);
 
-                GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
-                chunk.GetComponent<MeshFilter>().mesh = clippedGraph.ToMesh("Clipped Mesh");
-                chunk.GetComponent<PolygonCollider2D>().points = clippedGraph.OutsideNodes().Select(n => n.Vector).ToArray();
+                CreateChunk(clippedGraph, clipCell.Nuclei);
             }
 
             GetComponent<Collider2D>().enabled = false;
             gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Create a 2D, polygonal game object from a graph
+        /// </summary>
+        private void CreateChunk(Graph graph, Vector2 nuclei)
+        {
+            // Create chunk from prefab, add mesh
+            GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
+            chunk.GetComponent<MeshFilter>().mesh = graph.ToMesh("Clipped Mesh");
+
+            // Find all points external to the polygon
+            IEnumerable<GraphNode> outsideNodes = graph.OutsideNodes();
+            IOrderedEnumerable<GraphNode> orderedOutsideNodes = outsideNodes.OrderBy(n => n, new ClockwiseNodeComparer(nuclei));
+            Vector2[] outsidePoints = orderedOutsideNodes.Select(n => n.Vector).ToArray();
+
+            // Create polygon collider from points
+            chunk.GetComponent<PolygonCollider2D>().points = outsidePoints;
+
         }
     }
 }

@@ -39,7 +39,7 @@ namespace Assets
         // Update is called once per frame
         void Update()
         {
-            circumcircle = MathExtension.Circumcircle(children[0].position, children[1].position, children[2].position);
+            circumcircle = Geometry.Circumcircle(children[0].position, children[1].position, children[2].position);
         }
     }
 }

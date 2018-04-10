@@ -35,7 +35,7 @@ namespace Graph2D
         public DelaunayTriangulation(Circle contentBounds)
         {
             // Distance from incircle centre to the verts on the containing equilateral triangle
-            float d = MathExtension.DistanceFromIncircleCentreToEquilateralVertex(contentBounds);
+            float d = Geometry.DistanceFromIncircleCentreToEquilateralVertex(contentBounds);
             float adjustedD = d * 1.5f;
 
             // Direction from content bounds centre
@@ -83,7 +83,7 @@ namespace Graph2D
         /// </summary>
         public void Insert(Vector2 vector)
         {
-            if (!MathExtension.TriangleContains(vector, SuperTriangle[0].Vector, SuperTriangle[1].Vector, SuperTriangle[2].Vector))
+            if (!Geometry.TriangleContains(vector, SuperTriangle[0].Vector, SuperTriangle[1].Vector, SuperTriangle[2].Vector))
                 Debug.Log("Outside: " + vector);
 
             // Add new node to graph
@@ -115,7 +115,7 @@ namespace Graph2D
         /// </summary>
         public bool SuperTriangleContains(Vector2 point)
         {
-            return MathExtension.TriangleContains(point, SuperTriangle[0].Vector, SuperTriangle[1].Vector, SuperTriangle[2].Vector);
+            return Geometry.TriangleContains(point, SuperTriangle[0].Vector, SuperTriangle[1].Vector, SuperTriangle[2].Vector);
         }
 
         /// <summary>

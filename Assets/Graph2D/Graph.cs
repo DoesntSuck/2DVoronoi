@@ -25,8 +25,6 @@ namespace Graph2D
         /// </summary>
         public List<GraphTriangle> Triangles { get; protected set; }
 
-        public Vector2 Nuclei { get; set; }
-
         public Graph()
         {
             Nodes = new List<GraphNode>();
@@ -160,7 +158,7 @@ namespace Graph2D
                 edge.RemoveTriangle(triangle);
         }
 
-        public List<GraphNode> OutsideNodes()
+        public IEnumerable<GraphNode> OutsideNodes()
         {
             List<GraphNode> outsideNodes = new List<GraphNode>();
 
@@ -169,23 +167,20 @@ namespace Graph2D
                 // Add nodes not already contained in outsideNodes
                 outsideNodes.AddRange(outsideEdge.Nodes.Where(n => !outsideNodes.Contains(n)));
 
-            ClockwiseNodeComparer nodeComparer = new ClockwiseNodeComparer(Nuclei);
-            outsideNodes.Sort(nodeComparer);
-
             return outsideNodes;
         }
 
-        public bool Closed()
-        {
-            List<GraphNode> outsideNodes = OutsideNodes();
+        //public bool Closed()
+        //{
+        //    List<GraphNode> outsideNodes = OutsideNodes();
 
-            foreach (GraphNode node in outsideNodes)
-            {
-                if (node.Edges.Count < 2)
-                    return false;
-            }
+        //    foreach (GraphNode node in outsideNodes)
+        //    {
+        //        if (node.Edges.Count < 2)
+        //            return false;
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
     }
 }

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Graph2D;
 
 public class SideOfLineTest : MonoBehaviour
 {
@@ -14,7 +15,7 @@ public class SideOfLineTest : MonoBehaviour
         linePoint2 = transform.GetChild(1).position;
         point = transform.GetChild(2).position;
 
-        print(MathExtension.Side(linePoint1, linePoint2, point));
+        print(Geometry.Side(linePoint1, linePoint2, point));
 	}
 	
 	void OnDrawGizmos()
