@@ -6,7 +6,6 @@ using UnityEngine;
 
 namespace Graph2D
 {
-
     public static class Geometry
     {
         public static float DistanceFromIncircleCentreToEquilateralVertex(Circle incircle)
