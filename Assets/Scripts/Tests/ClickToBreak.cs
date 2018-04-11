@@ -54,20 +54,6 @@ namespace Assets
             }
         }
 
-        void OnDrawGizmos()
-        {
-            Handles.color = Color.cyan;
-            Handles.DrawWireDisc(clickPosition, -Vector3.forward, Radius);
-
-            if (voronoi != null)
-            {
-                GraphDebug.EdgeColour = Color.red;
-
-                foreach (Graph cell in voronoi.Cells)
-                   GraphDebug.DrawEdges(cell.Edges);
-            }
-        }
-
         // TODO: Send original mesh through Mesh clipper, so the REMAINS of it can be calculated
 
         void Break(Vector2[] points)
@@ -82,6 +68,8 @@ namespace Assets
 
                 // Flatten edge collection into list of vectors to use as edge points
                 List<Vector2> edgePoints = clipCell.Edges.SelectMany(e => e.Nodes.Select(n => n.Vector)).ToList();
+
+                // TODO: Check that the line intersects the mesh!!!!
 
                 GraphClipper.Clip(clippedGraph, edgePoints, clipCell.Nuclei);
 
