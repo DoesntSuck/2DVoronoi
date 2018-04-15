@@ -47,7 +47,7 @@ namespace Assets
                     while (!collider.OverlapPoint(point))
                         point = Geometry.RandomVectorFromTriangularDistribution(clickPosition, Radius);
 
-                    points[i] = point;
+                    points[i] = transform.InverseTransformPoint(point);
                 }
 
                 Break(points);
@@ -69,8 +69,6 @@ namespace Assets
                 // Flatten edge collection into list of vectors to use as edge points
                 List<Vector2> edgePoints = clipCell.Edges.SelectMany(e => e.Nodes.Select(n => n.Vector)).ToList();
 
-                // TODO: Check that the line intersects the mesh!!!!
-
                 GraphClipper.Clip(clippedGraph, edgePoints, clipCell.Nuclei);
 
                 CreateChunk(clippedGraph, clipCell.Nuclei);
@@ -86,7 +84,7 @@ namespace Assets
         private void CreateChunk(Graph graph, Vector2 nuclei)
         {
             // Create chunk from prefab, add mesh
-            GameObject chunk = Instantiate(ChunkPrefab, Vector3.zero, Quaternion.identity) as GameObject;
+            GameObject chunk = Instantiate(ChunkPrefab, transform.position, Quaternion.identity) as GameObject;
             chunk.GetComponent<MeshFilter>().mesh = graph.ToMesh("Clipped Mesh");
 
             // Find all points external to the polygon
