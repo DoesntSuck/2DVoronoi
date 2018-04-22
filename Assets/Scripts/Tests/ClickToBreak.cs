@@ -40,14 +40,19 @@ namespace Assets
                 // Set Origin to click location
                 clickPosition = hitInfo.point;
 
-                List<Vector2> points = PointsWithinCollider(clickPosition, NucleiGenerationRadius, MaxChunkCount);
-                IEnumerable<Vector2> closePointsExcluded = ExcludeClosePoints(points, MinDistanceBetweenPoints);
-                IEnumerable<Vector2> transformedPoints = closePointsExcluded.Select(p => (Vector2)transform.InverseTransformPoint(p));
-
-                Break(transformedPoints);
+                Break(GenerateNuclei(clickPosition, NucleiGenerationRadius, MaxChunkCount));
             }
         }
-        
+
+        private IEnumerable<Vector2> GenerateNuclei(Vector2 centre, float radius, int count)
+        {
+            List<Vector2> points = PointsWithinCollider(clickPosition, NucleiGenerationRadius, MaxChunkCount);
+            IEnumerable<Vector2> closePointsExcluded = ExcludeClosePoints(points, MinDistanceBetweenPoints);
+            IEnumerable<Vector2> transformedPoints = closePointsExcluded.Select(p => (Vector2)transform.InverseTransformPoint(p));
+
+            return transformedPoints;
+        }
+
         private List<Vector2> PointsWithinCollider(Vector2 centre, float radius, int count)
         {
             List<Vector2> points = new List<Vector2>();
