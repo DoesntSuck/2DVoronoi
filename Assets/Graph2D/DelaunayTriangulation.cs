@@ -12,20 +12,31 @@ namespace Graph2D
         /// </summary>
         private const float DEFAULT_SUPER_TRIANGLE_SCALE_FACTOR = 10;
 
+        private static readonly Vector2[] DEFAULT_SUPER_TRIANGLE = new Vector2[] 
+        {
+            Vector2.up * DEFAULT_SUPER_TRIANGLE_SCALE_FACTOR,
+            (Vector2.down + Vector2.left) * DEFAULT_SUPER_TRIANGLE_SCALE_FACTOR,
+            (Vector2.down + Vector2.right) * DEFAULT_SUPER_TRIANGLE_SCALE_FACTOR
+        };
+
+        /// <summary>
+        /// The nodes, edges, and triangles that constitute this triangulation
+        /// </summary>
+        public Graph Graph { get; private set; }
+
+        /// <summary>
+        /// Gets the nodes that make up the super triangle. The super triangle is a triangle large
+        /// enough to contain all points in this triangulation
+        /// </summary>
+        public GraphNode[] SuperTriangle { get; private set; }
+
         /// <summary>
         /// Create a new Delaunay triangulation with an arbitrarily sized super triangle: (0,1), (-1, -1), (1, -1). The super 
         /// triangle is assumed to be large enough to contain all of the points that will be inserted into this triangulation.
         /// </summary>
         public DelaunayTriangulation()
         {
-            // Super triangle vectors
-            Vector2 topCentre = Vector2.up * DEFAULT_SUPER_TRIANGLE_SCALE_FACTOR;
-            Vector2 bottomLeft = (Vector2.down + Vector2.left) * DEFAULT_SUPER_TRIANGLE_SCALE_FACTOR;
-            Vector2 bottomRight = (Vector2.down + Vector2.right) * DEFAULT_SUPER_TRIANGLE_SCALE_FACTOR;
-
-            // Store in an array to pass to Initialize method
-            Vector2[] superTriangle = new Vector2[] { topCentre, bottomLeft, bottomRight };
-            Initialize(superTriangle);
+            AddSuperTriangle(DEFAULT_SUPER_TRIANGLE);
         }
 
         /// <summary>
@@ -45,28 +56,17 @@ namespace Graph2D
 
             // Store in an array to pass to Initialize method
             Vector2[] superTriangle = new Vector2[] { topCentre, bottomLeft, bottomRight };
-            Initialize(superTriangle);
+            AddSuperTriangle(superTriangle);
         }
 
         /// <summary>
         /// Create a new Delaunay triangulation with a super triangle defined by the given vectors. The super triangle is assumed
         /// to contain all of the points that will be inserted into this triangulation
         /// </summary>
-        /// <param name="superTriangle"></param>
         public DelaunayTriangulation(Vector2[] superTriangle)
         {
-            Initialize(superTriangle);
+            AddSuperTriangle(superTriangle);
         }
-
-        /// <summary>
-        /// The nodes, edges, and triangles that constitute this triangulation
-        /// </summary>
-        public Graph Graph { get; private set; }
-
-        /// <summary>
-        /// The nodes that make up the super triangle that contains all other points in this triangulation
-        /// </summary>
-        public GraphNode[] SuperTriangle { get; private set; }
 
         /// <summary>
         /// Insert all of the given vectors into this triangulation
@@ -95,7 +95,7 @@ namespace Graph2D
             // Seperate triangles into inside and outside constituent edges
             HashSet<GraphEdge> insideEdges;
             HashSet<GraphEdge> outsideEdges;
-            InsideOutsideEdges(out insideEdges, out outsideEdges, guiltyTriangles);
+            InsideOutsideEdges(guiltyTriangles, out insideEdges, out outsideEdges);
 
             // Remove guilty triangles from graph
             foreach (GraphTriangle triangle in guiltyTriangles)
@@ -105,42 +105,16 @@ namespace Graph2D
             foreach (GraphEdge insideEdge in insideEdges)
                 Graph.Destroy(insideEdge);
 
-            // TODO: this is the earliest place to know that a triangle is no good
-            // SUCKS: triangulation has already been altered by this point
-                // SOLUTION: throw out the inserted point and undo changes to triangulation
-
             // Triangulate hole left by removed edges
             foreach (GraphEdge outsideEdge in outsideEdges)
                 Graph.CreateTriangle(outsideEdge, newNode);
         }
 
         /// <summary>
-        /// Checks if this triangulation's super triangle is large enough to contain the given point.
-        /// </summary>
-        public bool SuperTriangleContains(Vector2 point)
-        {
-            return Geometry.TriangleContains(point, SuperTriangle[0].Vector, SuperTriangle[1].Vector, SuperTriangle[2].Vector);
-        }
-
-        /// <summary>
-        /// Remove the super triangle from this triangulation. Triangules / edges reliant upon the super triangle's nodes will
-        /// be removed also.
-        /// </summary>
-        public void RemoveSuperTriangle()
-        {
-            // Remove the superTriangle from triangulation
-            foreach (GraphNode superTriangleNode in SuperTriangle)
-                Graph.Destroy(superTriangleNode);
-
-            // Remove ref to nodes
-            SuperTriangle = null;
-        }
-
-        /// <summary>
         /// Initializes the triangulation with a new super triangle defined by the given vectors. The super triangle is assumed to
         /// encapsulate all of the points that will be inserted into this triangulation
         /// </summary>
-        private void Initialize(Vector2[] superTriangle)
+        private void AddSuperTriangle(Vector2[] superTriangle)
         {
             // Need 3 nodes EXACTLY
             if (superTriangle.Length != 3)
@@ -167,31 +141,43 @@ namespace Graph2D
         }
 
         /// <summary>
-        /// Sorts edges of the given triangles into two sets: one containing edges internal to the collective polygon, and one containing edges on the
-        /// outside of the collective polygon
+        /// Remove the super triangle from this triangulation. Triangules / edges reliant upon the super triangle's nodes will
+        /// be removed also.
         /// </summary>
-        private void InsideOutsideEdges(out HashSet<GraphEdge> insideEdges, out HashSet<GraphEdge> outsideEdges, IEnumerable<GraphTriangle> triangles)
+        public void RemoveSuperTriangle()
+        {
+            // Remove the superTriangle from triangulation
+            foreach (GraphNode superTriangleNode in SuperTriangle)
+                Graph.Destroy(superTriangleNode);
+
+            // Remove ref to nodes
+            SuperTriangle = null;
+        }
+
+        /// <summary>
+        /// Sorts edges of the given triangles into two sets: one containing edges internal 
+        /// to the collective polygon, and one containing edges on the outside of the 
+        /// collective polygon
+        /// </summary>
+        private void InsideOutsideEdges(IEnumerable<GraphTriangle> triangles, out HashSet<GraphEdge> insideEdges, out HashSet<GraphEdge> outsideEdges)
         {
             insideEdges = new HashSet<GraphEdge>();
             outsideEdges = new HashSet<GraphEdge>();
 
             // Get each edge from each triangle
-            foreach (GraphTriangle triangle in triangles)
+            foreach (GraphEdge edge in triangles.SelectMany(t => t.Edges))
             {
-                foreach (GraphEdge edge in triangle.Edges)
-                {
-                    // Edge is 'inside' if it is shared by two triangles
-                    // Edge is 'outside' if only one triangle knows about it
+                // Edge is 'inside' if it is shared by two triangles
+                // Edge is 'outside' if only one triangle knows about it
 
-                    // If edge is in outside set (because another Triangle has already identified it), remove it and 
-                    // add it to inside set because this triangle is now identifying it
-                    if (outsideEdges.Remove(edge))
-                        insideEdges.Add(edge);
+                // If edge is in outside set (because another Triangle has already identified it), remove it and 
+                // add it to inside set because this triangle is now identifying it
+                if (outsideEdges.Remove(edge))
+                    insideEdges.Add(edge);
 
-                    // Edge is not in outside set or inside set, add to outside set
-                    else if (!insideEdges.Contains(edge))
-                        outsideEdges.Add(edge);
-                }
+                // Edge is not in outside set or inside set, add to outside set
+                else if (!insideEdges.Contains(edge))
+                    outsideEdges.Add(edge);
             }
         }
     }

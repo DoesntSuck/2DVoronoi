@@ -14,7 +14,7 @@ namespace Assets
         public bool Circumcircles;
 
         private List<Transform> children;
-        private DelaunayTriangulation triangulation;
+        public DelaunayTriangulation triangulation { get; private set; }
         private List<GraphTriangle> hoveredTriangles;
 
         void Awake()

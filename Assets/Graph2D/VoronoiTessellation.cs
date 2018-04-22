@@ -36,15 +36,11 @@ namespace Graph2D
         {
             Triangulation = new DelaunayTriangulation(bounds);
         }
-        
-        private void ValidateNuclei(Vector2[] nuclei)
+
+        public VoronoiTessellation(DelaunayTriangulation triangulation)
         {
-            for (int i = 0; i < nuclei.Length; i++)
-            {
-                // Check if any of the vectors are the same or close enough to be the same
-                if (nuclei.Except(i).Where(n => Vector2.Distance(n, nuclei[i]) <= float.Epsilon).Any())
-                    throw new System.ArgumentException("Nuclei are too close together");
-            }
+            Triangulation = triangulation;
+            GenerateDualGraph();
         }
 
         /// <summary>
@@ -52,8 +48,6 @@ namespace Graph2D
         /// </summary>
         public void Insert(IEnumerable<Vector2> nuclei)
         {
-            //ValidateNuclei(nuclei);
-
             // Insert all the points
             foreach (Vector2 nucleus in nuclei)
                 Triangulation.Insert(nucleus);
