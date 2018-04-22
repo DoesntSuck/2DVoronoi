@@ -50,9 +50,9 @@ namespace Graph2D
         /// <summary>
         /// Inserts the given nuclei into this Voronoi tesellation, recaclulating the nuclei cells.
         /// </summary>
-        public void Insert(Vector2[] nuclei)
+        public void Insert(IEnumerable<Vector2> nuclei)
         {
-            ValidateNuclei(nuclei);
+            //ValidateNuclei(nuclei);
 
             // Insert all the points
             foreach (Vector2 nucleus in nuclei)

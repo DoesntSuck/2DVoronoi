@@ -263,11 +263,11 @@ namespace Graph2D
         /// </summary>
         public static Vector2 Circumcentre(Vector2 a, Vector2 b, Vector2 c)
         {
-            Vector3 ab = b - a; // Side ab of triangle
-            Vector3 ac = c - a; // Side ac of triangle
+            Vector3 ab = (b - a).normalized; // Side ab of triangle
+            Vector3 ac = (c - a).normalized; // Side ac of triangle
 
             // Normal vector of plane created by three triangle vectors
-            Vector3 normal = Vector3.Cross(ab, ac);
+            Vector3 normal = Vector3.Cross(ab, ac).normalized;
 
             Vector3 midAB = Vector3.Lerp(a, b, 0.5f); // Midpoint of line ab
             Vector3 midAC = Vector3.Lerp(a, c, 0.5f); // Midpoint of line ac

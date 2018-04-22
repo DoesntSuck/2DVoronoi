@@ -29,7 +29,20 @@ namespace Graph2D
             {
                 // Lazy initialisation of circumcircle
                 if (circumcircle == null)
-                    circumcircle = Geometry.Circumcircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
+                {
+                    try
+                    {
+                        circumcircle = Geometry.Circumcircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
+                    }
+                    catch (Exception)
+                    {
+                        Debug.Log("a: " + Nodes[0].Vector);
+                        Debug.Log("b: " + Nodes[1].Vector);
+                        Debug.Log("c: " + Nodes[2].Vector);
+                        throw;
+                    }
+                }
+                    
                 return circumcircle;
             }
         }

@@ -15,9 +15,10 @@ namespace Assets
         public GameObject ChunkPrefab;
 
         public float Radius;
-        public int ChunkCount;
+        public int MaxChunkCount;
+        public float MinDistanceBetweenPoints;
 
-        private VoronoiTessellation voronoi;
+        private VoronoiTessellation voronoi = new VoronoiTessellation();
         private MeshFilter meshFilter;
         private Vector3 clickPosition;
         private new Collider2D collider;
@@ -39,43 +40,83 @@ namespace Assets
                 // Set Origin to click location
                 clickPosition = hitInfo.point;
 
-                // Generate 'Count' number of random Vectors that tend towards Origin
-                Vector2[] points = new Vector2[ChunkCount];
-                for (int i = 0; i < ChunkCount; i++)
+                bool successful = false;
+                while (!successful)
                 {
-                    Vector2 point = Geometry.RandomVectorFromTriangularDistribution(clickPosition, Radius);
-                    while (!collider.OverlapPoint(point))
-                        point = Geometry.RandomVectorFromTriangularDistribution(clickPosition, Radius);
+                    try
+                    {
+                        List<Vector2> points = PointsWithinCollider(clickPosition, MaxChunkCount);
+                        ExcludeClosePoints(points, MinDistanceBetweenPoints);
 
-                    points[i] = transform.InverseTransformPoint(point);
+                        IEnumerable<Vector2> transformedPoints = points.Select(p => (Vector2)transform.InverseTransformPoint(p));
+
+                        Break(transformedPoints);
+                        successful = true;
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogException(e);
+                        successful = false;
+                    }
                 }
+            }
+        }
+        
+        List<Vector2> PointsWithinCollider(Vector2 centre, int count)
+        {
+            List<Vector2> points = new List<Vector2>();
+            for (int i = 0; i < MaxChunkCount; i++)
+            {
+                Vector2 point = Geometry.RandomVectorFromTriangularDistribution(clickPosition, Radius);
+                if (collider.OverlapPoint(point))
+                    points.Add(point);
+            }
 
-                Break(points);
+            return points;
+        }
+
+        void ExcludeClosePoints(List<Vector2> points, float minimumDistance)
+        {
+            // Min distance between points
+            for (int i = 0; i < points.Count; i++)
+            {
+                // If this point is within min distance of another point
+                // remove this point
+                for (int j = 0; j < points.Count; j++)
+                {
+                    float distance = Vector2.Distance(points[i], points[j]);
+                    if (j != i && distance < MinDistanceBetweenPoints)
+                    {
+                        points.RemoveAt(i--);
+                        break;
+                    }
+                }
             }
         }
 
         // TODO: Send original mesh through Mesh clipper, so the REMAINS of it can be calculated
 
-        void Break(Vector2[] points)
+        void Break(IEnumerable<Vector2> points)
         {
-            voronoi = new VoronoiTessellation();
-            voronoi.Insert(points);
-
-            // Clip mesh for each voronoi cell
-            foreach (VoronoiCell clipCell in voronoi.Cells)
+            if (points.Count() > 1)
             {
-                Graph clippedGraph = meshFilter.mesh.ToGraph();
+                voronoi = new VoronoiTessellation();
+                voronoi.Insert(points);
 
-                // Flatten edge collection into list of vectors to use as edge points
-                List<Vector2> edgePoints = clipCell.Edges.SelectMany(e => e.Nodes.Select(n => n.Vector)).ToList();
+                // Clip mesh for each voronoi cell
+                foreach (VoronoiCell clipCell in voronoi.Cells)
+                {
+                    Graph clippedGraph = meshFilter.mesh.ToGraph();
 
-                GraphClipper.Clip(clippedGraph, edgePoints, clipCell.Nuclei);
+                    // Flatten edge collection into list of vectors to use as edge points
+                    List<Vector2> edgePoints = clipCell.Edges.SelectMany(e => e.Nodes.Select(n => n.Vector)).ToList();
 
-                CreateChunk(clippedGraph, clipCell.Nuclei);
+                    GraphClipper.Clip(clippedGraph, edgePoints, clipCell.Nuclei);
+                    CreateChunk(clippedGraph, clipCell.Nuclei);
+                }
+
+                Destroy(gameObject);
             }
-
-            GetComponent<Collider2D>().enabled = false;
-            gameObject.SetActive(false);
         }
 
         /// <summary>
@@ -86,6 +127,7 @@ namespace Assets
             // Create chunk from prefab, add mesh
             GameObject chunk = Instantiate(ChunkPrefab, transform.position, Quaternion.identity) as GameObject;
             chunk.GetComponent<MeshFilter>().mesh = graph.ToMesh("Clipped Mesh");
+            chunk.transform.localScale = transform.localScale;
 
             // Find all points external to the polygon
             IEnumerable<GraphNode> outsideNodes = graph.OutsideNodes();

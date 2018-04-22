@@ -105,6 +105,10 @@ namespace Graph2D
             foreach (GraphEdge insideEdge in insideEdges)
                 Graph.Destroy(insideEdge);
 
+            // TODO: this is the earliest place to know that a triangle is no good
+            // SUCKS: triangulation has already been altered by this point
+                // SOLUTION: throw out the inserted point and undo changes to triangulation
+
             // Triangulate hole left by removed edges
             foreach (GraphEdge outsideEdge in outsideEdges)
                 Graph.CreateTriangle(outsideEdge, newNode);
