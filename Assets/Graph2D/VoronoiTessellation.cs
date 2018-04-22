@@ -81,7 +81,7 @@ namespace Graph2D
 
             foreach (GraphNode node in Triangulation.Graph.Nodes)
             {
-                // Create a new voronoi cell, add to list of cells
+                // Each node in delaunay is the nuclei of a voronoi cell
                 VoronoiCell cell = new VoronoiCell(node.Vector);
                 cells.Add(cell);
 

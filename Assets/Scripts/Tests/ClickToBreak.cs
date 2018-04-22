@@ -14,7 +14,7 @@ namespace Assets
     {
         public GameObject ChunkPrefab;
 
-        public float Radius;
+        public float NucleiGenerationRadius;
         public int MaxChunkCount;
         public float MinDistanceBetweenPoints;
 
@@ -40,34 +40,20 @@ namespace Assets
                 // Set Origin to click location
                 clickPosition = hitInfo.point;
 
-                bool successful = false;
-                while (!successful)
-                {
-                    try
-                    {
-                        List<Vector2> points = PointsWithinCollider(clickPosition, MaxChunkCount);
-                        ExcludeClosePoints(points, MinDistanceBetweenPoints);
+                List<Vector2> points = PointsWithinCollider(clickPosition, NucleiGenerationRadius, MaxChunkCount);
+                IEnumerable<Vector2> closePointsExcluded = ExcludeClosePoints(points, MinDistanceBetweenPoints);
+                IEnumerable<Vector2> transformedPoints = closePointsExcluded.Select(p => (Vector2)transform.InverseTransformPoint(p));
 
-                        IEnumerable<Vector2> transformedPoints = points.Select(p => (Vector2)transform.InverseTransformPoint(p));
-
-                        Break(transformedPoints);
-                        successful = true;
-                    }
-                    catch (System.Exception e)
-                    {
-                        Debug.LogException(e);
-                        successful = false;
-                    }
-                }
+                Break(transformedPoints);
             }
         }
         
-        List<Vector2> PointsWithinCollider(Vector2 centre, int count)
+        private List<Vector2> PointsWithinCollider(Vector2 centre, float radius, int count)
         {
             List<Vector2> points = new List<Vector2>();
-            for (int i = 0; i < MaxChunkCount; i++)
+            for (int i = 0; i < count; i++)
             {
-                Vector2 point = Geometry.RandomVectorFromTriangularDistribution(clickPosition, Radius);
+                Vector2 point = Geometry.RandomVectorFromTriangularDistribution(centre, radius);
                 if (collider.OverlapPoint(point))
                     points.Add(point);
             }
@@ -75,28 +61,28 @@ namespace Assets
             return points;
         }
 
-        void ExcludeClosePoints(List<Vector2> points, float minimumDistance)
+        private IEnumerable<Vector2> ExcludeClosePoints(List<Vector2> points, float minimumDistance)
         {
             // Min distance between points
             for (int i = 0; i < points.Count; i++)
             {
-                // If this point is within min distance of another point
-                // remove this point
-                for (int j = 0; j < points.Count; j++)
-                {
-                    float distance = Vector2.Distance(points[i], points[j]);
-                    if (j != i && distance < MinDistanceBetweenPoints)
-                    {
-                        points.RemoveAt(i--);
-                        break;
-                    }
-                }
+                Vector2 point = points[i];
+
+                // Are there any points in the list that this point is too close to?
+                bool tooClose = points.Except(i)
+                                      .Where(p => Vector2.Distance(p, point) < minimumDistance)
+                                      .Any();
+
+                // If points isn't too close to any other points,
+                // return it
+                if (!tooClose)
+                    yield return point;
             }
         }
 
         // TODO: Send original mesh through Mesh clipper, so the REMAINS of it can be calculated
 
-        void Break(IEnumerable<Vector2> points)
+        private void Break(IEnumerable<Vector2> points)
         {
             if (points.Count() > 1)
             {

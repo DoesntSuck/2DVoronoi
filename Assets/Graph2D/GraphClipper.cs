@@ -125,8 +125,11 @@ namespace Graph2D
                 }
 
                 /// <summary>
-                /// Case: (ONE node INSIDE, TWO nodes OUTSIDE): intersection nodes and inside node form a triangle
-                /// OR    (ONE node INSIDE, ONE node ON EDGE, ONE node OUTSIDE): intersection node, on edge node, and inside node form a triangle
+                /// Case: (ONE node INSIDE, TWO nodes OUTSIDE): 
+                /// Intersection nodes and inside node form a triangle
+                /// 
+                /// OR    (ONE node INSIDE, ONE node ON EDGE, ONE node OUTSIDE): 
+                /// Intersection node, on edge node, and inside node form a triangle
                 ///    ______                          `._____
                 ///  __\____/__ clip edge       OR      \`.  /
                 ///     \  /                             \ `.
@@ -184,7 +187,8 @@ namespace Graph2D
                 }
 
                 /// <summary>
-                /// Case: (TWO nodes INSIDE, ONE node OUTSIDE): intersection nodes and inside nodes form a four sided polygon; triangulate the polygon
+                /// Case: (TWO nodes INSIDE, ONE node OUTSIDE): 
+                /// Intersection nodes and inside nodes form a four sided polygon; triangulate the polygon
                 ///    ↑
                 ///  outside
                 ///

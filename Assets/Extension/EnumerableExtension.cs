@@ -4,10 +4,9 @@ using UnityEngine;
 
 public static class EnumerableExtension
 {
-
-    public static IEnumerable<T> Except<T>(this T[] items, int indexToSkip)
+    public static IEnumerable<T> Except<T>(this IList<T> items, int indexToSkip)
     {
-        for (int i = 0; i < items.Length; i++)
+        for (int i = 0; i < items.Count; i++)
         {
             if (i != indexToSkip)
                 yield return items[i];
