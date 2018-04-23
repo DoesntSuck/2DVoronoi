@@ -18,9 +18,9 @@ namespace Graph2D
         /// </summary>
         public float Radius { get; set; }
 
-        public Circle(float x, float y, float radius)
+        public Circle(Vector2 centre, float radius)
         {
-            Centre = new Vector2(x, y);
+            Centre = centre;
             Radius = radius;
         }
 

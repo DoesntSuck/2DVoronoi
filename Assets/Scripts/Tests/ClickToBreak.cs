@@ -18,7 +18,7 @@ namespace Assets
         public int MaxChunkCount;
         public float MinDistanceBetweenPoints;
 
-        private VoronoiTessellation voronoi = new VoronoiTessellation();
+        private VoronoiTessellation voronoi;
         private MeshFilter meshFilter;
         private Vector3 clickPosition;
         private new Collider2D collider;
@@ -91,8 +91,7 @@ namespace Assets
         {
             if (points.Count() > 1)
             {
-                voronoi = new VoronoiTessellation();
-                voronoi.Insert(points);
+                voronoi = new VoronoiTessellation(points, new Circle(clickPosition, NucleiGenerationRadius * 2));
 
                 // Clip mesh for each voronoi cell
                 foreach (VoronoiCell clipCell in voronoi.Cells)

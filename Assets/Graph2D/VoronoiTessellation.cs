@@ -8,11 +8,6 @@ namespace Graph2D
     public class VoronoiTessellation
     {
         /// <summary>
-        /// The Delaunay Triangulation of which this Voronoi Tessellation is the dual graph.
-        /// </summary>
-        public DelaunayTriangulation Triangulation { get; private set; }
-
-        /// <summary>
         /// Gets the cells in this Voronoi Tesellation. Calculated as the dual graph 
         /// of the Delaunay triangulation. Only completed cells are returned.
         /// </summary>
@@ -20,55 +15,32 @@ namespace Graph2D
 
         private List<VoronoiCell> cells;
 
-        /// <summary>
-        /// A new Voronoi tesellation with an arbitrarily large bounding triangle.
-        /// </summary>
-        public VoronoiTessellation()
-        {
-            Triangulation = new DelaunayTriangulation();
-        }
+        private Graph delaunayTriangulation;
 
-        /// <summary>
-        /// Creates a new Voronoi tesellation with the given bounds. All inserted nuclei are assumed to be contained
-        /// within the bounds.
-        /// </summary>
-        public VoronoiTessellation(Circle bounds)
+        public VoronoiTessellation(IEnumerable<Vector2> nuclei, Vector2[] superTriangle)
         {
-            Triangulation = new DelaunayTriangulation(bounds);
-        }
-
-        public VoronoiTessellation(DelaunayTriangulation triangulation)
-        {
-            Triangulation = triangulation;
+            delaunayTriangulation = DelaunayTriangulation.Create(nuclei, superTriangle, true);
             GenerateDualGraph();
         }
 
-        /// <summary>
-        /// Inserts the given nuclei into this Voronoi tesellation, recaclulating the nuclei cells.
-        /// </summary>
-        public void Insert(IEnumerable<Vector2> nuclei)
+        public VoronoiTessellation(IEnumerable<Vector2> nuclei)
         {
-            // Insert all the points
-            foreach (Vector2 nucleus in nuclei)
-                Triangulation.Insert(nucleus);
-
-            // THEN recalculate the cells
+            delaunayTriangulation = DelaunayTriangulation.Create(nuclei, true);
             GenerateDualGraph();
         }
 
-        /// <summary>
-        /// Inserts the given nucleus into this Voronoi tesellation, recalculating the cells. If inserting multiple
-        /// nuclei it is recommended to insert them all at once.
-        /// </summary>
-        public void Insert(Vector2 nucleus)
+        public VoronoiTessellation(IEnumerable<Vector2> nuclei, Circle bounds)
         {
-            // Insert point
-            Triangulation.Insert(nucleus);
-
-            // THEN recalculate the cells
+            delaunayTriangulation = DelaunayTriangulation.Create(nuclei, bounds, true);
             GenerateDualGraph();
         }
 
+        public VoronoiTessellation(Graph delaunayTriangulation)
+        {
+            this.delaunayTriangulation = delaunayTriangulation;
+            GenerateDualGraph();
+        }
+        
         /// <summary>
         /// Calculate the Voronoi tesellation which is the dual graph of the Delaunay triangulation property.
         /// </summary>
@@ -79,7 +51,7 @@ namespace Graph2D
             // Convert to Voronoi Cells
             cells = new List<VoronoiCell>();
 
-            foreach (GraphNode node in Triangulation.Graph.Nodes)
+            foreach (GraphNode node in delaunayTriangulation.Nodes)
             {
                 // Each node in delaunay is the nuclei of a voronoi cell
                 VoronoiCell cell = new VoronoiCell(node.Vector);

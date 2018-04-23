@@ -14,7 +14,7 @@ namespace Assets
         public bool Circumcircles;
 
         private List<Transform> children;
-        public DelaunayTriangulation triangulation { get; private set; }
+        public Graph Triangulation { get; private set; }
         private List<GraphTriangle> hoveredTriangles;
 
         void Awake()
@@ -29,20 +29,9 @@ namespace Assets
         void Start()
         {
             // Get transform positions
-            Vector2[] vectors = children.Select(c => (Vector2)c.position).ToArray();
+            List<Vector2> vectors = children.Select(c => (Vector2)c.position).ToList();
 
-            triangulation = new DelaunayTriangulation(Geometry.BoundingCircle(vectors));
-
-            // Set collider points to the super triangle vectors
-            GetComponent<PolygonCollider2D>().points = triangulation.SuperTriangle.Select(n => n.Vector).ToArray();
-
-            // Insert vectors into triangulation
-            triangulation.Insert(vectors);
-
-            if (RemoveSuperTriangle)
-            {
-                triangulation.RemoveSuperTriangle();
-            }
+            Triangulation = DelaunayTriangulation.Create(vectors);
         }
 
         void OnDrawGizmos()
@@ -58,10 +47,10 @@ namespace Assets
                 GraphDebug.DrawVectors(children.Select(c => c.position));
 
                 // Draw the triangulation if it exists
-                if (triangulation != null)
+                if (Triangulation != null)
                 {
                     GraphDebug.Circumcircles = Circumcircles;
-                    GraphDebug.DrawGraph(triangulation.Graph);
+                    GraphDebug.DrawGraph(Triangulation);
 
                     // Highlight the triangles that are moused over
                     if (hoveredTriangles != null)
@@ -79,7 +68,7 @@ namespace Assets
         public void MouseMoved(Ray worldSpaceRay)
         {
             // If triangulation has been calculated
-            if (triangulation != null)
+            if (Triangulation != null)
             {
                 // Raycast to find location on collider that has been hit
                 RaycastHit2D hit = Physics2D.GetRayIntersection(worldSpaceRay);
@@ -90,7 +79,7 @@ namespace Assets
                     List<GraphTriangle> containingTriangles = new List<GraphTriangle>(); ;
 
                     // Check each triangle to see if it if the pointer is inside it
-                    foreach (GraphTriangle triangle in triangulation.Graph.Triangles)
+                    foreach (GraphTriangle triangle in Triangulation.Triangles)
                     {
                         if (Geometry.TriangleContains(hit.point, triangle.Nodes[0].Vector, triangle.Nodes[1].Vector, triangle.Nodes[2].Vector))
                             containingTriangles.Add(triangle);

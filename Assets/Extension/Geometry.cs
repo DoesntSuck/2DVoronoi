@@ -27,7 +27,7 @@ namespace Graph2D
             // The side length of an eqilateral triangle with the given incircle radius
             return incircleRadius / ((1f / 6f) * Mathf.Sqrt(3));
         }
-
+        
         public static Bounds CalculateBounds(IEnumerable<Vector2> vectors)
         {
             // Maximal and minimal vectors
@@ -96,15 +96,20 @@ namespace Graph2D
             return ((b1 == b2) && (b2 == b3));
         }
 
-        public static Circle BoundingCircle(Vector2[] vectors)
+        public static Circle BoundingCircle(IEnumerable<Vector2> vectors)
         {
             // Calculate average of vectors
             Vector2 sum = Vector2.zero;
+            int count = 0;
             foreach (Vector2 vector in vectors)
+            {
                 sum += vector;
+                count++;
+            }
+                
 
             // Centre of given vectors is their average
-            Vector2 centre = sum / vectors.Length;
+            Vector2 centre = sum / count;
 
             // Calculate distance from centre to furthest vector
             float greatestDistance = 0;
@@ -117,7 +122,7 @@ namespace Graph2D
             }
 
             // Convert to circle
-            return new Circle(centre.x, centre.y, greatestDistance);
+            return new Circle(centre, greatestDistance);
         }
 
         public static Vector2 PolygonCentre(IList<Vector2> polygonPoints)
@@ -239,8 +244,7 @@ namespace Graph2D
 
             float radius = Vector2.Distance(centre, abMid);
 
-            Circle incircle = new Circle(centre.x, centre.y, radius);
-
+            Circle incircle = new Circle(centre, radius);
             return incircle;
         }
 
@@ -255,7 +259,7 @@ namespace Graph2D
             // Distance from circumcentre to position vector a
             float distanceOA = Vector2.Distance(circumcentre, a);
 
-            return new Circle(circumcentre.x, circumcentre.y, distanceOA);
+            return new Circle(circumcentre, distanceOA);
         }
 
         /// <summary>
