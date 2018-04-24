@@ -24,6 +24,9 @@ namespace Graph2D
         /// </summary>
         public GraphEdge(GraphNode node1, GraphNode node2)
         {
+            if (node1 == node2)
+                throw new ArgumentException("Nodes must be distinct");
+
             Nodes = new GraphNode[] { node1, node2 };
             Triangles = new HashSet<GraphTriangle>();
         }
@@ -49,16 +52,16 @@ namespace Graph2D
         /// </summary>
         public bool Contains(GraphNode node)
         {
-            // Check both nodes
-            foreach (GraphNode myNode in Nodes)
-            {
-                // If the nodes contain same data they are equal
-                if (myNode.Equals(node))
-                    return true;
-            }
+            return Nodes.Contains(node);
+        }
 
-            // Nethier of the pair of nodes are the given node
-            return false;
+        /// <summary>
+        /// Checks if this edge is one of the edges that makes up the
+        /// given triangle
+        /// </summary>
+        public bool IsConstituent(GraphTriangle triangle)
+        {
+            return Triangles.Contains(triangle);
         }
 
         /// <summary>

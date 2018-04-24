@@ -76,9 +76,9 @@ namespace Graph2D
             foreach (GraphTriangle subjectTriangle in trianglesCopy)
             {
                 // Get nodes, inside, outside, and on the clip edge
-                GraphNode[] insideNodes = subjectTriangle.SameSideNodes(edgePoint1, edgePoint2, inside).ToArray();
-                GraphNode[] onEdgeNodes = subjectTriangle.OnEdgeNodes(edgePoint1, edgePoint2).ToArray();
-                GraphNode[] outsideNodes = subjectTriangle.OpposideSideNodes(edgePoint1, edgePoint2, inside).ToArray();
+                GraphNode[] insideNodes = SameSideNodes(subjectTriangle, edgePoint1, edgePoint2, inside).ToArray();
+                GraphNode[] onEdgeNodes = OnEdgeNodes(subjectTriangle, edgePoint1, edgePoint2).ToArray();
+                GraphNode[] outsideNodes = OpposideSideNodes(subjectTriangle, edgePoint1, edgePoint2, inside).ToArray();
 
                 /// <summary>
                 /// CASE: (ZERO nodes OUTSIDE the triangle): entire triangle is kept, even nodes ON the clip edge
@@ -269,7 +269,7 @@ namespace Graph2D
                     GraphEdge insideSideEdge;
 
                     // IF THERE IS AN EDGE, THE NODES ARE ADJACENT... 
-                    if (intersectionNodes[0].HasEdge(insideNodes[0]))
+                    if (intersectionNodes[0].IsNeighbour(insideNodes[0]))
                     {
                         // Bisecting edge connects non-adjacent edges
                         bisectingEdge = graph.CreateEdge(intersectionNodes[0], insideNodes[1]);
@@ -301,6 +301,32 @@ namespace Graph2D
             // Remove nodes outside the crop edge
             foreach (GraphNode deadNode in deadNodes)
                 graph.Destroy(deadNode);
+        }
+
+        /// <summary>
+        /// Gets all nodes in the given triangle that are on the same side of the given
+        /// edge as determined by the side param
+        /// </summary>
+        private static IEnumerable<GraphNode> SameSideNodes(GraphTriangle triangle, Vector2 edgePoint1, Vector2 edgePoint2, float side)
+        {
+            return triangle.Nodes.Where(n => Geometry.Side(edgePoint1, edgePoint2, n.Vector) == side);
+        }
+
+        /// <summary>
+        /// Gets all nodes in the given triangle that are on the opposite side of the
+        /// given edge as determined by the side param.
+        /// </summary>
+        private static IEnumerable<GraphNode> OpposideSideNodes(GraphTriangle triangle, Vector2 edgePoint1, Vector2 edgePoint2, float side)
+        {
+            return triangle.Nodes.Where(n => Geometry.Side(edgePoint1, edgePoint2, n.Vector) == -side);
+        }
+
+        /// <summary>
+        /// Gets all nodes in the given triangle that are on the given edge.
+        /// </summary>
+        private static IEnumerable<GraphNode> OnEdgeNodes(GraphTriangle triangle, Vector2 edgePoint1, Vector2 edgePoint2)
+        {
+            return triangle.Nodes.Where(n => Geometry.Side(edgePoint1, edgePoint2, n.Vector) == 0);
         }
     }
 }

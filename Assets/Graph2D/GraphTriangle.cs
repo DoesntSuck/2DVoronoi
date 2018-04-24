@@ -29,20 +29,8 @@ namespace Graph2D
             {
                 // Lazy initialisation of circumcircle
                 if (circumcircle == null)
-                {
-                    try
-                    {
-                        circumcircle = Geometry.Circumcircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
-                    }
-                    catch (Exception)
-                    {
-                        Debug.Log("a: " + Nodes[0].Vector);
-                        Debug.Log("b: " + Nodes[1].Vector);
-                        Debug.Log("c: " + Nodes[2].Vector);
-                        throw;
-                    }
-                }
-                    
+                    circumcircle = Geometry.Circumcircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
+
                 return circumcircle;
             }
         }
@@ -81,6 +69,9 @@ namespace Graph2D
                 throw new ArgumentException("Nodes and edges do not constitute a triangle");
         }
         
+        /// <summary>
+        /// Orders the nodes in this triangle clockwise.
+        /// </summary>
         public void OrderNodes()
         {
             ClockwiseNodeComparer nodeComparer = new ClockwiseNodeComparer(Incircle.Centre);
@@ -145,31 +136,7 @@ namespace Graph2D
         /// </summary>
         public bool SharesEdge(GraphTriangle other)
         {
-            // Compare each edge
-            foreach (GraphEdge edge in Edges)
-            {
-                // Check if triangles share edge
-                if (other.Contains(edge))
-                    return true;
-            }
-
-            // No edges were shared
-            return false;
-        }
-
-        public IEnumerable<GraphNode> SameSideNodes(Vector2 edgePoint1, Vector2 edgePoint2, float side)
-        {
-            return Nodes.Where(n => Geometry.Side(edgePoint1, edgePoint2, n.Vector) == side);
-        }
-
-        public IEnumerable<GraphNode> OpposideSideNodes(Vector2 edgePoint1, Vector2 edgePoint2, float side)
-        {
-            return Nodes.Where(n => Geometry.Side(edgePoint1, edgePoint2, n.Vector) == -side);
-        }
-
-        public IEnumerable<GraphNode> OnEdgeNodes(Vector2 edgePoint1, Vector2 edgePoint2)
-        {
-            return Nodes.Where(n => Geometry.Side(edgePoint1, edgePoint2, n.Vector) == 0);
+            return Edges.Where(e => other.Contains(e)).Any();
         }
 
         public override string ToString()

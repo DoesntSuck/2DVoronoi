@@ -169,18 +169,5 @@ namespace Graph2D
 
             return outsideNodes;
         }
-
-        //public bool Closed()
-        //{
-        //    List<GraphNode> outsideNodes = OutsideNodes();
-
-        //    foreach (GraphNode node in outsideNodes)
-        //    {
-        //        if (node.Edges.Count < 2)
-        //            return false;
-        //    }
-
-        //    return true;
-        //}
     }
 }

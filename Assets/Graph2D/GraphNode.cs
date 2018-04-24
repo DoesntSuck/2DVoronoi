@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 namespace Graph2D
 {
@@ -66,35 +67,24 @@ namespace Graph2D
             Triangles.Remove(triangle);
         }
 
+        /// <summary>
+        /// Gets the edge that connects this node to the given node.
+        /// Returns null if there is no edge connecting the two nodes.
+        /// </summary>
         public GraphEdge GetEdge(GraphNode other)
         {
-            foreach (GraphEdge edge in Edges)
-            {
-                if (edge.Contains(other))
-                    return edge;
-            }
-
-            return null;
+            return Edges.Where(e => e.Contains(other)).FirstOrDefault();
         }
 
-        public bool HasEdge(GraphNode node)
+        /// <summary>
+        /// Checks if this node is connected by an edge to the given 
+        /// node.
+        /// </summary>
+        public bool IsNeighbour(GraphNode node)
         {
-            // Check if ANY edge contains the given node
-            foreach (GraphEdge edge in Edges)
-            {
-                if (edge.Contains(node))
-                    return true;
-            }
-
-            // No edges contain the given node
-            return false;
+            return Edges.SelectMany(e => e.Nodes).Contains(node);
         }
-
-        public bool Equals(GraphNode other)
-        {
-            return Vector.Equals(other.Vector);
-        }
-
+        
         public override string ToString()
         {
             return "GraphNode: " + Vector.ToString();
