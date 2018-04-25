@@ -25,7 +25,7 @@ namespace Graph2D
         public static Graph Create(IEnumerable<Vector2> points, bool keepSuperTriangle = false)
         {
             // TODO: calculate super triangle that bounds all points
-            Circle boundingCircle = Geometry.BoundingCircle(points);
+            Circle boundingCircle = Geometry2D.BoundingCircle(points);
 
             return Create(points, boundingCircle, keepSuperTriangle);
         }
@@ -54,7 +54,7 @@ namespace Graph2D
         public static Graph Create(IEnumerable<Vector2> points, Circle bounds, bool keepSuperTriangle = false)
         {
             // Distance from incircle centre to the verts on the containing equilateral triangle
-            float d = Geometry.DistanceFromIncircleCentreToEquilateralVertex(bounds);
+            float d = Geometry2D.DistanceFromIncircleCentreToEquilateralVertex(bounds);
             float adjustedD = d * 1.5f;
 
             // Direction from content bounds centre
@@ -82,7 +82,7 @@ namespace Graph2D
         /// </summary>
         private static  void Insert(Vector2 vector)
         {
-            if (!Geometry.TriangleContains(vector, superTriangleNodes[0].Vector, superTriangleNodes[1].Vector, superTriangleNodes[2].Vector))
+            if (!Geometry2D.TriangleContains(vector, superTriangleNodes[0].Vector, superTriangleNodes[1].Vector, superTriangleNodes[2].Vector))
                 Debug.Log("Outside: " + vector);
 
             // Add new node to graph

@@ -29,7 +29,7 @@ namespace Graph2D
             {
                 // Lazy initialisation of circumcircle
                 if (circumcircle == null)
-                    circumcircle = Geometry.Circumcircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
+                    circumcircle = Geometry2D.Circumcircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
 
                 return circumcircle;
             }
@@ -45,7 +45,7 @@ namespace Graph2D
             {
                 // Lazy initialisation of incircle
                 if (incircle == null)
-                    incircle = Geometry.Incircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
+                    incircle = Geometry2D.Incircle(Nodes[0].Vector, Nodes[1].Vector, Nodes[2].Vector);
                 return incircle;
             }
         }

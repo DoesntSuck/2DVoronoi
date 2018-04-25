@@ -75,6 +75,6 @@ public class TriTest : MonoBehaviour
         perpAC = Vector3.Cross(normal, ac);
 
         if (CalculateCircumcircle)
-            circumcircle = Geometry.Circumcircle(a, b, c);
+            circumcircle = Geometry2D.Circumcircle(a, b, c);
     }
 }

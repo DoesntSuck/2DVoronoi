@@ -58,7 +58,7 @@ namespace Assets
             List<Vector2> points = new List<Vector2>();
             for (int i = 0; i < count; i++)
             {
-                Vector2 point = Geometry.RandomVectorFromTriangularDistribution(centre, radius);
+                Vector2 point = Geometry2D.RandomVectorFromTriangularDistribution(centre, radius);
                 if (collider.OverlapPoint(point))
                     points.Add(point);
             }

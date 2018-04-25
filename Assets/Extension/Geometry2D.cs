@@ -6,8 +6,13 @@ using UnityEngine;
 
 namespace Graph2D
 {
-    public static class Geometry
+    public static class Geometry2D
     {
+        /// <summary>
+        /// Calculates the distance from the centre of the given circle to
+        /// the vertex of an imagined equilateral triangle that tightly
+        /// bounds the circle
+        /// </summary>
         public static float DistanceFromIncircleCentreToEquilateralVertex(Circle incircle)
         {
             // Length of side of equilateral triangle with 'incircle'
@@ -22,13 +27,21 @@ namespace Graph2D
             return distance;
         }
 
+        /// <summary>
+        /// Calculates the side length of an imagined eqilateral
+        /// triangle that tighly bounds the given circle
+        /// </summary>
         public static float EquilateralSideLength(float incircleRadius)
         {
             // The side length of an eqilateral triangle with the given incircle radius
             return incircleRadius / ((1f / 6f) * Mathf.Sqrt(3));
         }
         
-        public static Bounds CalculateBounds(IEnumerable<Vector2> vectors)
+        /// <summary>
+        /// Calculates a bounding box that tightly boudns the given
+        /// collection of points
+        /// </summary>
+        public static Bounds BoundingBox(IEnumerable<Vector2> vectors)
         {
             // Maximal and minimal vectors
             Vector2 greatestX = vectors.First();
@@ -63,39 +76,10 @@ namespace Graph2D
             return new Bounds(centre, size);
         }
 
-        // TODO: Use side of line test for each GraphEdge vs polygonal centre - instead of this method which requires adjacent poitns to be edges
-
-        public static bool ContainsPoint(Vector2[] polyPoints, Vector2 p)
-        {
-            int j = polyPoints.Length - 1;
-            bool inside = false;
-            for (int i = 0; i < polyPoints.Length; j = i++)
-            {
-                if (((polyPoints[i].y <= p.y && p.y < polyPoints[j].y) || (polyPoints[j].y <= p.y && p.y < polyPoints[i].y)) &&
-                   (p.x < (polyPoints[j].x - polyPoints[i].x) * (p.y - polyPoints[i].y) / (polyPoints[j].y - polyPoints[i].y) + polyPoints[i].x))
-                    inside = !inside;
-            }
-            return inside;
-        }
-
-
-        private static float Sign(Vector2 p1, Vector2 p2, Vector2 p3)
-        {
-            return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
-        }
-
-        // http://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle
-        public static bool TriangleContains(Vector2 pt, Vector2 v1, Vector2 v2, Vector2 v3)
-        {
-            bool b1, b2, b3;
-
-            b1 = Sign(pt, v1, v2) < 0.0f;
-            b2 = Sign(pt, v2, v3) < 0.0f;
-            b3 = Sign(pt, v3, v1) < 0.0f;
-
-            return ((b1 == b2) && (b2 == b3));
-        }
-
+        /// <summary>
+        /// Calculates a circle that tightly boudns the given
+        /// collection of points
+        /// </summary>
         public static Circle BoundingCircle(IEnumerable<Vector2> vectors)
         {
             // Calculate average of vectors
@@ -106,7 +90,6 @@ namespace Graph2D
                 sum += vector;
                 count++;
             }
-                
 
             // Centre of given vectors is their average
             Vector2 centre = sum / count;
@@ -125,6 +108,45 @@ namespace Graph2D
             return new Circle(centre, greatestDistance);
         }
 
+        // TODO: Use side of line test for each GraphEdge vs polygonal centre - instead of this method which requires adjacent poitns to be edges
+        /// <summary>
+        /// Checks whether the given point is contained within the
+        /// polygon defined by the array of points. The array of
+        /// points is assumed to be ordered clockwise.
+        /// </summary>
+        public static bool ContainsPoint(Vector2[] polyPoints, Vector2 p)
+        {
+            int j = polyPoints.Length - 1;
+            bool inside = false;
+            for (int i = 0; i < polyPoints.Length; j = i++)
+            {
+                if (((polyPoints[i].y <= p.y && p.y < polyPoints[j].y) || (polyPoints[j].y <= p.y && p.y < polyPoints[i].y)) &&
+                   (p.x < (polyPoints[j].x - polyPoints[i].x) * (p.y - polyPoints[i].y) / (polyPoints[j].y - polyPoints[i].y) + polyPoints[i].x))
+                    inside = !inside;
+            }
+            return inside;
+        }
+
+        /// <summary>
+        /// Checks if the give point is contained within the triangle defined by
+        /// the given points.
+        /// </summary>
+        /// <see>http://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle</see>
+        public static bool TriangleContains(Vector2 pt, Vector2 v1, Vector2 v2, Vector2 v3)
+        {
+            bool b1, b2, b3;
+
+            b1 = Sign(pt, v1, v2) < 0.0f;
+            b2 = Sign(pt, v2, v3) < 0.0f;
+            b3 = Sign(pt, v3, v1) < 0.0f;
+
+            return ((b1 == b2) && (b2 == b3));
+        }
+
+        /// <summary>
+        /// Calculates the centre of the polygon defined by the
+        /// given points
+        /// </summary>
         public static Vector2 PolygonCentre(IList<Vector2> polygonPoints)
         {
             float signedArea = PolygonSignedArea(polygonPoints);
@@ -177,15 +199,6 @@ namespace Graph2D
             return signedArea;
         }
 
-        public static Vector2 KnownIntersection(Vector2 line1Point1, Vector2 line1Point2, Vector2 line2Point1, Vector2 line2Point2)
-        {
-            Vector2 intersection = new Vector2();
-            if (!LineIntersection(line1Point1, line1Point2, line2Point1, line2Point2, ref intersection))
-                throw new ArgumentException("Lines do not intersect");
-
-            return new Vector2(intersection.x, intersection.y);
-        }
-
         /// <summary>
         /// Determines which side of a line a point lies on. 0 = on line, -1 = one side, +1 = other side
         /// </summary>
@@ -199,6 +212,9 @@ namespace Graph2D
             else return Mathf.Sign(determinant);
         }
 
+        /// <summary>
+        /// Generates a random vector from a triangular distribution
+        /// </summary>
         public static Vector2 RandomVectorFromTriangularDistribution(Vector2 origin, float maxDistance)
         {
             // Random vertex represent the distance to move from the origin
@@ -211,8 +227,12 @@ namespace Graph2D
             return origin + (direction * distance);
         }
 
-        // https://en.wikipedia.org/wiki/Triangular_distribution
         // Calculates a random number from a triangular distribution
+        /// <summary>
+        /// Generates a random number from within a triangular
+        /// distribution.
+        /// </summary>
+        /// <see>https://en.wikipedia.org/wiki/Triangular_distribution</see>
         public static float RandomTriangular(float min, float max, float mid)
         {
             // Generate float from uniform distribution
@@ -228,6 +248,10 @@ namespace Graph2D
                 return max - Mathf.Sqrt((1 - unifrom) * (max - min) * (max - mid));
         }
 
+        /// <summary>
+        /// Calculates a circle wholly contained by the given triangle
+        /// and that touches each edge of it.
+        /// </summary>
         public static Circle Incircle(Vector2 a, Vector2 b, Vector2 c)
         {
             Vector2 abMid = Vector2.Lerp(a, b, 0.5f);
@@ -308,11 +332,22 @@ namespace Graph2D
             return true;
         }
 
-        // Gives magnitude of equivalent 3d vector cross
-        private static float Cross(Vector2 v, Vector2 w)
+        /// <summary>
+        /// Gets the intersection point of two lines. Throws an exception if
+        /// the lines do not intersect.
+        /// </summary>
+        public static Vector2 KnownIntersection(Vector2 line1Point1, Vector2 line1Point2, Vector2 line2Point1, Vector2 line2Point2)
         {
-            // v × w to be vx wy − vy wx
-            return v.x * w.y - v.y * w.x;
+            Vector2 intersection = new Vector2();
+            if (!LineIntersection(line1Point1, line1Point2, line2Point1, line2Point2, ref intersection))
+                throw new ArgumentException("Lines do not intersect");
+
+            return new Vector2(intersection.x, intersection.y);
+        }
+
+        private static float Sign(Vector2 p1, Vector2 p2, Vector2 p3)
+        {
+            return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
         }
     }
 }

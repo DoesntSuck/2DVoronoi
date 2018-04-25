@@ -15,7 +15,7 @@ public class SideOfLineTest : MonoBehaviour
         linePoint2 = transform.GetChild(1).position;
         point = transform.GetChild(2).position;
 
-        print(Geometry.Side(linePoint1, linePoint2, point));
+        print(Geometry2D.Side(linePoint1, linePoint2, point));
 	}
 	
 	void OnDrawGizmos()

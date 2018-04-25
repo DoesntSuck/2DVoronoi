@@ -28,7 +28,7 @@ namespace Graph2D
                 Vector2 b = edgePoints[i + 1];
 
                 // Which side of edge is counted as being inside?
-                float inside = Geometry.Side(a, b, nuclei);
+                float inside = Geometry2D.Side(a, b, nuclei);
 
                 // Clip edges that aren't inside of line
                 Clip(graph, a, b, inside);
@@ -164,7 +164,7 @@ namespace Graph2D
                         else // EDGE HAS NOT BEEN CLIPPED YET...
                         {
                             // Calculate the intersection of clip edge and tri-edge
-                            Vector2 intersection = Geometry.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
+                            Vector2 intersection = Geometry2D.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
 
                             // Create node at intersection, remember node
                             GraphNode intersectionNode = graph.CreateNode(intersection);
@@ -223,7 +223,7 @@ namespace Graph2D
                         else // EDGE HAS NOT BEEN CLIPPED YET...
                         {
                             // Calculate the intersection of clip edge and tri-edge
-                            Vector2 intersection = Geometry.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
+                            Vector2 intersection = Geometry2D.KnownIntersection(edgePoint1, edgePoint2, insideNode.Vector, outsideNode.Vector);
 
                             // Create node at intersection, remember node
                             GraphNode intersectionNode = graph.CreateNode(intersection);
@@ -309,7 +309,7 @@ namespace Graph2D
         /// </summary>
         private static IEnumerable<GraphNode> SameSideNodes(GraphTriangle triangle, Vector2 edgePoint1, Vector2 edgePoint2, float side)
         {
-            return triangle.Nodes.Where(n => Geometry.Side(edgePoint1, edgePoint2, n.Vector) == side);
+            return triangle.Nodes.Where(n => Geometry2D.Side(edgePoint1, edgePoint2, n.Vector) == side);
         }
 
         /// <summary>
@@ -318,7 +318,7 @@ namespace Graph2D
         /// </summary>
         private static IEnumerable<GraphNode> OpposideSideNodes(GraphTriangle triangle, Vector2 edgePoint1, Vector2 edgePoint2, float side)
         {
-            return triangle.Nodes.Where(n => Geometry.Side(edgePoint1, edgePoint2, n.Vector) == -side);
+            return triangle.Nodes.Where(n => Geometry2D.Side(edgePoint1, edgePoint2, n.Vector) == -side);
         }
 
         /// <summary>
@@ -326,7 +326,7 @@ namespace Graph2D
         /// </summary>
         private static IEnumerable<GraphNode> OnEdgeNodes(GraphTriangle triangle, Vector2 edgePoint1, Vector2 edgePoint2)
         {
-            return triangle.Nodes.Where(n => Geometry.Side(edgePoint1, edgePoint2, n.Vector) == 0);
+            return triangle.Nodes.Where(n => Geometry2D.Side(edgePoint1, edgePoint2, n.Vector) == 0);
         }
     }
 }

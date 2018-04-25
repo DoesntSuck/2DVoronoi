@@ -81,7 +81,7 @@ namespace Assets
                     // Check each triangle to see if it if the pointer is inside it
                     foreach (GraphTriangle triangle in Triangulation.Triangles)
                     {
-                        if (Geometry.TriangleContains(hit.point, triangle.Nodes[0].Vector, triangle.Nodes[1].Vector, triangle.Nodes[2].Vector))
+                        if (Geometry2D.TriangleContains(hit.point, triangle.Nodes[0].Vector, triangle.Nodes[1].Vector, triangle.Nodes[2].Vector))
                             containingTriangles.Add(triangle);
                     }
 
